@@ -7,7 +7,8 @@ from scipy.sparse import diags
 # from scipy.sparse.linalg import eigsh
 from scipy.linalg import eigh
 from datetime import datetime
-
+from multiprocessing import Pool
+from copy import deepcopy
 #this script computes the eigenvalue problem of each element in the Markov chain
 #for 1 set of [L,M,J,t,g] parameters
 
@@ -23,6 +24,7 @@ J=2.5
 g=-0.87
 KSupValsAll=[2*np.pi*j/(L*M) for j in range(0,M)]
 beta=10
+procNum=48
 #construct h(K,s)
 # hPart=lil_matrix((2 * L, 2 * L), dtype=complex)
 I2=eye(2,dtype=complex,format="lil")
@@ -101,7 +103,7 @@ def bisection_method(f,tol=1e-16,maxiter=10000):
     for _ in range(maxiter):
         midpoint = (a + b) / 2
         midVal=f(midpoint)
-        print("f(midpoint)="+str(midVal))
+        # print("f(midpoint)="+str(midVal))
         if np.abs(midVal)<1e-16 or (b-a)/2<tol:
             return midpoint
 
@@ -129,3 +131,165 @@ def chemicalPotential(EVec):
     retVal=bisection_method(muf)
 
     return retVal
+
+
+
+def avgEnergy(EVec):
+    """
+
+    :param EVec: a vector containing E for all K for all j=0,1,...,2L-1
+    :return: average value of energy
+    """
+    muVal=chemicalPotential(EVec)
+    weightedEng=[1/(np.exp(beta*(e-muVal))+1)*e for e in EVec]
+
+    return np.sum(weightedEng)
+
+def s2Eig(sCurr):
+    """
+
+    :param sCurr: current value of vector s
+    :return: eigenvalues and eigenvectors given s
+    """
+    inValsAll=[[j,sCurr] for j in range(0,len(KSupValsAll))]
+    pool0=Pool(procNum)
+    retAll=pool0.map(hEig,inValsAll)
+    return retAll
+
+def combineRetFromhEig(retAll):
+    """
+
+    :param retAll: results from function oneStepEvolution(sCurr)
+    :return: combined values of eigenvalues
+    """
+    EVec=[]
+    for item in retAll:
+        _,_,vals,_=item
+        for e in vals:
+            EVec.append(e)
+    return EVec
+
+
+
+# sVals=[-1,1]
+# sRealizations=[]
+# for i in range(0,L):
+#     sRealizations.append(sVals[random.randint(0,1)])
+#
+# tStart=datetime.now()
+# retAll=oneStepEvolution(sRealizations)
+# print(combineRetFromhEig(retAll))
+# tEnd=datetime.now()
+#
+# print("one step time: ",tEnd-tStart)
+
+TEst=1000#equilibration time estimated
+
+#TODO: estimate a more accurate value of TEst using time series
+blkSize=100
+blkNum=50
+
+class computationData:
+    def __init__(self):
+        self.T=TEst
+        self.blkSize=blkSize
+        self.blkNum=blkNum
+        self.data=dict()
+        self.sAll=[]
+
+def flipInd(i):
+    """
+
+    :return: random index to be flipped
+    """
+
+    return random.randint(0,L-1)
+
+def genUnif(i):
+    """
+
+    :param i:
+    :return: random number in [0,1
+    """
+    return random.random()
+
+record=computationData()
+totalMCLength=2
+
+#indices of s to be flippd
+pool1=Pool(procNum)
+indsFlipAll=pool1.map(flipInd,list(range(0,totalMCLength)))
+
+#uniform distribution on [0,1)
+pool2=Pool(procNum)
+realUnif=pool2.map(genUnif,list(range(0,totalMCLength)))
+# print(realUnif)
+# print(indsAll)
+#init s
+sVals=[-1,1]
+sCurr=[]
+for i in range(0,L):
+    sCurr.append(sVals[random.randint(0,1)])
+sCurr=np.array(sCurr)
+for tau in range(0,totalMCLength):
+    record.sAll.append(sCurr)
+    retAll=s2Eig(sCurr)
+    EVec=combineRetFromhEig(retAll)
+    EAvgCurr=avgEnergy(EVec)
+
+    #flip s
+    sNext=deepcopy(sCurr)
+    sNext[indsFlipAll[tau]]*=-1
+    retAllNext=s2Eig(sNext)
+    EVecNext=combineRetFromhEig(retAllNext)
+    EAvgNext=avgEnergy(EVecNext)
+
+    DeltaE=EAvgNext-EAvgCurr
+    if DeltaE<=0:
+        sCurr=deepcopy(sNext)
+        continue
+    else:
+        if realUnif[tau]<np.exp(-beta*DeltaE):
+            sCurr = deepcopy(sNext)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
