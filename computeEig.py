@@ -1,3 +1,5 @@
+import pickle
+
 from scipy.sparse import kron
 from scipy.sparse import lil_matrix
 import numpy as np
@@ -189,9 +191,9 @@ TEst=1000#equilibration time estimated
 blkSize=100
 blkNum=50
 
-class computationData:
+class computationData:#holding computational results to be dumped using pickle
     def __init__(self):
-        self.T=TEst
+        # self.T=TEst
         self.blkSize=blkSize
         self.blkNum=blkNum
         self.data=dict()
@@ -225,34 +227,51 @@ pool2=Pool(procNum)
 realUnif=pool2.map(genUnif,list(range(0,totalMCLength)))
 # print(realUnif)
 # print(indsAll)
+
 #init s
+tInitStart=datetime.now()
 sVals=[-1,1]
 sCurr=[]
 for i in range(0,L):
     sCurr.append(sVals[random.randint(0,1)])
 sCurr=np.array(sCurr)
-for tau in range(0,totalMCLength):
-    record.sAll.append(sCurr)
-    retAll=s2Eig(sCurr)
-    EVec=combineRetFromhEig(retAll)
-    EAvgCurr=avgEnergy(EVec)
+record.T=TEst
 
+#init eigenvalues and eigenvectors
+retAll=s2Eig(sCurr)
+EVec=combineRetFromhEig(retAll)
+EAvgCurr=avgEnergy(EVec)
+tInitEnd=datetime.now()
+print("init time: ",tInitEnd-tInitStart)
+
+tMCStart=datetime.now()
+
+for tau in range(0,totalMCLength):
     #flip s
     sNext=deepcopy(sCurr)
-    sNext[indsFlipAll[tau]]*=-1
-    retAllNext=s2Eig(sNext)
-    EVecNext=combineRetFromhEig(retAllNext)
-    EAvgNext=avgEnergy(EVecNext)
-
-    DeltaE=EAvgNext-EAvgCurr
-    if DeltaE<=0:
-        sCurr=deepcopy(sNext)
-        continue
+    sNext[indsFlipAll[tau]] *= -1
+    retAllNext = s2Eig(sNext)
+    EVecNext = combineRetFromhEig(retAllNext)
+    EAvgNext = avgEnergy(EVecNext)
+    DeltaE = EAvgNext - EAvgCurr
+    if DeltaE <= 0:
+        sCurr = deepcopy(sNext)
+        retAll=deepcopy(retAllNext)
     else:
         if realUnif[tau]<np.exp(-beta*DeltaE):
             sCurr = deepcopy(sNext)
+            retAll = deepcopy(retAllNext)
+    record.sAll.append(sCurr)
+    record.data[tau]=deepcopy(retAll)
 
 
+
+tMCEnd=datetime.now()
+print("MC time: ", tMCEnd-tMCStart)
+
+outPklFileName="out.pkl"
+with open(outPklFileName,"wb") as fptr:
+    pickle.dump(record,fptr, pickle.HIGHEST_PROTOCOL)
 
 
 
