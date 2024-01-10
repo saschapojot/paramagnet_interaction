@@ -201,6 +201,7 @@ class computationData:#holding computational results to be dumped using pickle
         self.sAll=[]
         self.EAvgAll=[]
         self.TEq=1000
+        self.equilibrium=False
 
 # def flipInd(i):
 #     """
@@ -306,6 +307,7 @@ while active:
     if tau>=5000 and tau%1000==0:
         reachEq=autc(record.sAll)
         if reachEq==True:
+            record.equilibrium=True
             active=False
 
 
