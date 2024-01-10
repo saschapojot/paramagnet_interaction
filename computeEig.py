@@ -11,6 +11,7 @@ from scipy.linalg import eigh
 from datetime import datetime
 from multiprocessing import Pool
 from copy import deepcopy
+import statsmodels.api as sm
 #this script computes the eigenvalue problem of each element in the Markov chain
 #for 1 set of [L,M,J,t,g] parameters
 
@@ -185,7 +186,7 @@ def combineRetFromhEig(retAll):
 #
 # print("one step time: ",tEnd-tStart)
 
-TEst=1000#equilibration time estimated
+# TEst=1000#equilibration time estimated
 
 #TODO: estimate a more accurate value of TEst using time series
 blkSize=100
@@ -196,35 +197,37 @@ class computationData:#holding computational results to be dumped using pickle
         # self.T=TEst
         self.blkSize=blkSize
         self.blkNum=blkNum
-        self.data=dict()
+        self.data=[]
         self.sAll=[]
+        self.EAvgAll=[]
+        self.TEq=1000
 
-def flipInd(i):
-    """
+# def flipInd(i):
+#     """
+#
+#     :return: random index to be flipped
+#     """
+#
+#     return random.randint(0,L-1)
 
-    :return: random index to be flipped
-    """
-
-    return random.randint(0,L-1)
-
-def genUnif(i):
-    """
-
-    :param i:
-    :return: random number in [0,1
-    """
-    return random.random()
+# def genUnif(i):
+#     """
+#
+#     :param i:
+#     :return: random number in [0,1
+#     """
+#     return random.random()
 
 record=computationData()
-totalMCLength=2
+# totalMCLength=2
 
 #indices of s to be flippd
-pool1=Pool(procNum)
-indsFlipAll=pool1.map(flipInd,list(range(0,totalMCLength)))
+# pool1=Pool(procNum)
+# indsFlipAll=pool1.map(flipInd,list(range(0,totalMCLength)))
 
 #uniform distribution on [0,1)
-pool2=Pool(procNum)
-realUnif=pool2.map(genUnif,list(range(0,totalMCLength)))
+# pool2=Pool(procNum)
+# realUnif=pool2.map(genUnif,list(range(0,totalMCLength)))
 # print(realUnif)
 # print(indsAll)
 
@@ -235,7 +238,7 @@ sCurr=[]
 for i in range(0,L):
     sCurr.append(sVals[random.randint(0,1)])
 sCurr=np.array(sCurr)
-record.T=TEst
+# record.T=TEst
 
 #init eigenvalues and eigenvectors
 retAll=s2Eig(sCurr)
@@ -246,23 +249,111 @@ print("init time: ",tInitEnd-tInitStart)
 
 tMCStart=datetime.now()
 
-for tau in range(0,totalMCLength):
+
+def autc(sAll):
+    """
+
+    :param sAll: contaning s vectors as rows
+    :return: whether autocorrelation of each variable is low for long lags
+    """
+    lag=32
+    minRowNum=1000
+    if len(sAll)<minRowNum:
+        return False
+    sAllLast1000=sAll[-1000:]
+    colNum=len(sAllLast1000[0,:])
+
+    reachEq=True
+    for i in range(0,colNum):
+        acfi= sm.tsa.acf(sAllLast1000[:, i], nlags=lag)
+        avgi=np.mean(np.abs(acfi[-10:]))
+        reachEq=reachEq and (avgi<1e-2)
+    return reachEq
+
+
+active=True
+maxEquilbrationStep=100000
+
+toEquilibriumCounter=0
+tau=0
+#to reach equilibrium of MCMC
+while active:
     #flip s
-    sNext=deepcopy(sCurr)
-    sNext[indsFlipAll[tau]] *= -1
+    sNext = deepcopy(sCurr)
+    flipIndVal=random.randint(0,L-1)
+    sNext[flipIndVal] *= -1
     retAllNext = s2Eig(sNext)
     EVecNext = combineRetFromhEig(retAllNext)
     EAvgNext = avgEnergy(EVecNext)
     DeltaE = EAvgNext - EAvgCurr
     if DeltaE <= 0:
         sCurr = deepcopy(sNext)
-        retAll=deepcopy(retAllNext)
+        retAll = deepcopy(retAllNext)
+        EAvgCurr=EAvgNext
     else:
-        if realUnif[tau]<np.exp(-beta*DeltaE):
+        if random.random() < np.exp(-beta * DeltaE):
             sCurr = deepcopy(sNext)
             retAll = deepcopy(retAllNext)
-    record.sAll.append(sCurr)
-    record.data[tau]=deepcopy(retAll)
+            EAvgCurr = EAvgNext
+
+    record.sAll.append(deepcopy(sCurr))
+    record.EAvgAll.append(EAvgCurr)
+    record.data.append(deepcopy(retAll))
+    tau+=1
+    toEquilibriumCounter+=1
+    if toEquilibriumCounter>maxEquilbrationStep:
+        break
+    if tau>=5000 and tau%1000==0:
+        reachEq=autc(record.sAll)
+        if reachEq==True:
+            active=False
+
+
+TEq=tau-1
+record.TEq=TEq
+#sampling after equilibrium
+for tau in range(TEq,TEq+blkNum*blkSize):
+    # flip s
+    sNext = deepcopy(sCurr)
+    flipIndVal = random.randint(0, L - 1)
+    sNext[flipIndVal] *= -1
+    retAllNext = s2Eig(sNext)
+    EVecNext = combineRetFromhEig(retAllNext)
+    EAvgNext = avgEnergy(EVecNext)
+    DeltaE = EAvgNext - EAvgCurr
+    if DeltaE <= 0:
+        sCurr = deepcopy(sNext)
+        retAll = deepcopy(retAllNext)
+        EAvgCurr = EAvgNext
+    else:
+        if random.random() < np.exp(-beta * DeltaE):
+            sCurr = deepcopy(sNext)
+            retAll = deepcopy(retAllNext)
+            EAvgCurr = EAvgNext
+
+    record.sAll.append(deepcopy(sCurr))
+    record.EAvgAll.append(EAvgCurr)
+    record.data.append(deepcopy(retAll))
+
+
+
+# for tau in range(0,totalMCLength):
+#     #flip s
+#     sNext=deepcopy(sCurr)
+#     sNext[indsFlipAll[tau]] *= -1
+#     retAllNext = s2Eig(sNext)
+#     EVecNext = combineRetFromhEig(retAllNext)
+#     EAvgNext = avgEnergy(EVecNext)
+#     DeltaE = EAvgNext - EAvgCurr
+#     if DeltaE <= 0:
+#         sCurr = deepcopy(sNext)
+#         retAll=deepcopy(retAllNext)
+#     else:
+#         if realUnif[tau]<np.exp(-beta*DeltaE):
+#             sCurr = deepcopy(sNext)
+#             retAll = deepcopy(retAllNext)
+#     record.sAll.append(deepcopy(sCurr))
+#     record.data[tau]=deepcopy(retAll)
 
 
 
