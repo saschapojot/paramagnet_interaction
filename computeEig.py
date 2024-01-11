@@ -260,8 +260,10 @@ def autc(sAll):
     minRowNum=1000
     if len(sAll)<minRowNum:
         return False
-    sAllLast1000=sAll[-1000:]
+    sAllLast1000=np.array(sAll[-minRowNum:])
+
     colNum=len(sAllLast1000[0,:])
+    # print(colNum)
 
     reachEq=True
     for i in range(0,colNum):
@@ -303,7 +305,7 @@ while active:
     toEquilibriumCounter+=1
     if toEquilibriumCounter>maxEquilbrationStep:
         break
-    if tau>=5000 and tau%1000==0:
+    if tau>=5000 and  tau%1000==0:
         reachEq=autc(record.sAll)
         if reachEq==True:
             active=False
