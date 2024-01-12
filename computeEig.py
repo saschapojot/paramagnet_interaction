@@ -303,6 +303,8 @@ while active:
     record.EAvgAll.append(EAvgCurr)
     record.data.append(deepcopy(retAll))
     tau+=1
+    if tau%500==0:
+        print("sweep "+str(tau))
     toEquilibriumCounter+=1
     if toEquilibriumCounter>maxEquilbrationStep:
         break
@@ -318,6 +320,8 @@ record.TEq=TEq
 #sampling after equilibrium
 for tau in range(TEq,TEq+blkNum*blkSize):
     # flip s
+    if tau%500==0:
+        print("sweep "+str(tau))
     sNext = deepcopy(sCurr)
     flipIndVal = random.randint(0, L - 1)
     sNext[flipIndVal] *= -1
