@@ -261,8 +261,12 @@ def autc(sAll):
     minRowNum=1000
     if len(sAll)<minRowNum:
         return False
-    sAllLast1000=np.array(sAll[-1000:])
+
+    sAllLast1000=np.array(sAll[-minRowNum:])
+
+
     colNum=len(sAllLast1000[0,:])
+    # print(colNum)
 
     reachEq=True
     for i in range(0,colNum):
@@ -302,10 +306,12 @@ while active:
     record.EAvgAll.append(EAvgCurr)
     record.data.append(deepcopy(retAll))
     tau+=1
+    if tau%500==0:
+        print("sweep "+str(tau))
     toEquilibriumCounter+=1
     if toEquilibriumCounter>maxEquilbrationStep:
         break
-    if tau>=5000 and tau%1000==0:
+    if tau>=5000 and  tau%1000==0:
         reachEq=autc(record.sAll)
         if reachEq==True:
             record.equilibrium=True
@@ -320,6 +326,8 @@ tSampleStart=datetime.now()
 #sampling after equilibrium
 for tau in range(TEq,TEq+blkNum*blkSize):
     # flip s
+    if tau%500==0:
+        print("sweep "+str(tau))
     sNext = deepcopy(sCurr)
     flipIndVal = random.randint(0, L - 1)
     sNext[flipIndVal] *= -1
