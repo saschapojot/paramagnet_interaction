@@ -261,7 +261,7 @@ def autc(sAll):
     minRowNum=1000
     if len(sAll)<minRowNum:
         return False
-    sAllLast1000=sAll[-1000:]
+    sAllLast1000=np.array(sAll[-1000:])
     colNum=len(sAllLast1000[0,:])
 
     reachEq=True
@@ -277,6 +277,7 @@ maxEquilbrationStep=100000
 
 toEquilibriumCounter=0
 tau=0
+tEqStart=datetime.now()
 #to reach equilibrium of MCMC
 while active:
     #flip s
@@ -310,9 +311,12 @@ while active:
             record.equilibrium=True
             active=False
 
-
+tEqEnd=datetime.now()
+print("equilibrium time: ",tEqEnd-tEqStart)
 TEq=tau-1
 record.TEq=TEq
+
+tSampleStart=datetime.now()
 #sampling after equilibrium
 for tau in range(TEq,TEq+blkNum*blkSize):
     # flip s
@@ -339,30 +343,16 @@ for tau in range(TEq,TEq+blkNum*blkSize):
 
 
 
-# for tau in range(0,totalMCLength):
-#     #flip s
-#     sNext=deepcopy(sCurr)
-#     sNext[indsFlipAll[tau]] *= -1
-#     retAllNext = s2Eig(sNext)
-#     EVecNext = combineRetFromhEig(retAllNext)
-#     EAvgNext = avgEnergy(EVecNext)
-#     DeltaE = EAvgNext - EAvgCurr
-#     if DeltaE <= 0:
-#         sCurr = deepcopy(sNext)
-#         retAll=deepcopy(retAllNext)
-#     else:
-#         if realUnif[tau]<np.exp(-beta*DeltaE):
-#             sCurr = deepcopy(sNext)
-#             retAll = deepcopy(retAllNext)
-#     record.sAll.append(deepcopy(sCurr))
-#     record.data[tau]=deepcopy(retAll)
+tSampleEnd=datetime.now()
+
+print("Sampling time: ",tSampleEnd-tSampleStart)
 
 
 
 tMCEnd=datetime.now()
 print("MC time: ", tMCEnd-tMCStart)
 
-outPklFileName="out.pkl"
+outPklFileName="beta"+str(beta)+"out.pkl"
 with open(outPklFileName,"wb") as fptr:
     pickle.dump(record,fptr, pickle.HIGHEST_PROTOCOL)
 
