@@ -24,7 +24,7 @@ Ne=L*M
 
 t=0.4
 J=2.5
-g=-0.87
+g=-0.05
 KSupValsAll=[2*np.pi*j/(L*M) for j in range(0,M)]
 beta=10
 procNum=48
@@ -280,13 +280,14 @@ def autc(sAll):
 
 
 active=True
-maxEquilbrationStep=100000
+maxEquilbrationStep=10000
 
 toEquilibriumCounter=0
 tau=0
 tEqStart=datetime.now()
 #to reach equilibrium of MCMC
 while active:
+    tOneMCStepStart=datetime.now()
     #flip s
     sNext = deepcopy(sCurr)
     flipIndVal=random.randint(0,L-1)
@@ -308,6 +309,8 @@ while active:
     record.sAll.append(deepcopy(sCurr))
     record.EAvgAll.append(EAvgCurr)
     record.data.append(deepcopy(retAll))
+    tOneMCStepEnd=datetime.now()
+    print("one step MC :",tOneMCStepEnd-tOneMCStepStart)
     tau+=1
     if tau%500==0:
         print("sweep "+str(tau))
