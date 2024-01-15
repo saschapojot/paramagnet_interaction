@@ -13,7 +13,7 @@ from scipy.linalg import eigh
 
 blkSize=100
 blkNum=50
-beta=0.1
+beta=10
 class computationData:#holding computational results to be dumped using pickle
     def __init__(self):
         # self.T=TEst
@@ -27,8 +27,10 @@ class computationData:#holding computational results to be dumped using pickle
 
 tLoadStart=datetime.now()
 
-
-inPklFile="./lagbeta"+str(beta)+"out.pkl"
+t=0.4
+J=2.5
+g=0
+inPklFile="beta"+str(beta)+"t"+str(t)+"J"+str(J)+"g"+str(g)+"out.pkl"
 
 with open(inPklFile,"rb") as fptr:
     record=pickle.load(fptr)
@@ -65,10 +67,7 @@ M=20
 
 Ne=L*M
 procNum=48
-j=13
-t=0.4
-J=2.5
-g=-0.87
+
 KSupValsAll=[2*np.pi*j/(L*M) for j in range(0,M)]
 
 #construct h(K,s)
@@ -125,7 +124,7 @@ def hEig(js):
     return [j,s,vals,vecs]
 
 
-def bisection_method(f,tol=1e-16,maxiter=10000):
+def bisection_method(f,tol=1e-9,maxiter=10000):
     """
 
     :param f: an monotonically increasing function
@@ -242,9 +241,10 @@ def x2y(a,K,xvec):
     length=len(xvec)
     for r in range(0,L-1):
         yvec[r*length:(r+1)*length]*=np.exp(1j*r*K)*np.exp(1j*2*np.pi*r*a/L)
+    yvec/=np.linalg.norm(yvec,ord=2)
     return yvec
 
-retKAllSorted=sorted(retKAll,key=lambda  item: item[0])
+retKAllSorted=sorted(retKAll,key=lambda  item: item[0])#with S
 
 
 #eigenvectors for primitive cell
@@ -337,8 +337,8 @@ for item in sortedProjs:
                 sPlt[a].append(coefsa[l])
 
 
-from matplotlib.pyplot import cm
-color = cm.rainbow(np.linspace(0, 1, L))
+# from matplotlib.pyplot import cm
+# color = cm.rainbow(np.linspace(0, 1, L))
 
 multiply=10
 plt.figure()
@@ -350,8 +350,8 @@ plt.ylabel("Energy")
 
 kPrimValsAll=[2*np.pi*n/(L*M) for n in range(0,L*M-1)]
 kPrimValsAll=np.array(kPrimValsAll)
-# plt.plot(kPrimValsAll/np.pi,-2*t*np.cos(kPrimValsAll),color="black")
-plt.title("$\\beta=$"+str(beta))
-plt.savefig("beta"+str(beta)+"unfolded.png")
+plt.plot(kPrimValsAll/np.pi,-2*t*np.cos(kPrimValsAll)-25,color="black")
+plt.title("$\\beta=$"+str(beta)+", $t=$"+str(t)+", $J=$"+str(J)+", $g=$"+str(g))
+plt.savefig("beta"+str(beta)+"t"+str(t)+"J"+str(J)+"g"+str(g)+"unfolded.png")
 plt.close()
 
