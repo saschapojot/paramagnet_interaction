@@ -21,7 +21,7 @@ M=20
 
 Ne=L*M
 
-
+j=13
 t=0.4
 J=2.5
 g=-0.87
@@ -258,26 +258,29 @@ def autc(sAll):
     :return: whether autocorrelation of each variable is low for long lags
     """
     lag=32
-    minRowNum=1000
+    num=10
+    lastRowNums=lag*num
+    minRowNum=1000+lastRowNums
+
     if len(sAll)<minRowNum:
         return False
 
-    sAllLast1000=np.array(sAll[-minRowNum:])
+    sAllLast=np.array(sAll[-lastRowNums::lag])
 
 
-    colNum=len(sAllLast1000[0,:])
+    colNum=len(sAllLast[0,:])
     # print(colNum)
 
     reachEq=True
     for i in range(0,colNum):
-        acfi= sm.tsa.acf(sAllLast1000[:, i], nlags=lag)
-        avgi=np.mean(np.abs(acfi[-10:]))
+        acfi= sm.tsa.acf(sAllLast[:, i], nlags=lag)
+        avgi=np.mean(np.abs(acfi))
         reachEq=reachEq and (avgi<1e-2)
     return reachEq
 
 
 active=True
-maxEquilbrationStep=10000
+maxEquilbrationStep=100000
 
 toEquilibriumCounter=0
 tau=0
@@ -292,7 +295,6 @@ while active:
     EVecNext = combineRetFromhEig(retAllNext)
     EAvgNext = avgEnergy(EVecNext)
     DeltaE = EAvgNext - EAvgCurr
-    print("sCurr="+str(sCurr))
     if DeltaE <= 0:
         sCurr = deepcopy(sNext)
         retAll = deepcopy(retAllNext)
@@ -302,7 +304,7 @@ while active:
             sCurr = deepcopy(sNext)
             retAll = deepcopy(retAllNext)
             EAvgCurr = EAvgNext
-    print("sNext="+str(sNext))
+
     record.sAll.append(deepcopy(sCurr))
     record.EAvgAll.append(EAvgCurr)
     record.data.append(deepcopy(retAll))
