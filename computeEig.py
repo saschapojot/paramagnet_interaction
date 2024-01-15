@@ -21,7 +21,7 @@ M=20
 
 Ne=L*M
 
-j=13
+
 t=0.4
 J=2.5
 g=-0.87
@@ -275,7 +275,7 @@ def autc(sAll):
 
 
 active=True
-maxEquilbrationStep=100000
+maxEquilbrationStep=10000
 
 toEquilibriumCounter=0
 tau=0
@@ -289,6 +289,7 @@ while active:
     EVecNext = combineRetFromhEig(retAllNext)
     EAvgNext = avgEnergy(EVecNext)
     DeltaE = EAvgNext - EAvgCurr
+    print("sCurr="+str(sCurr))
     if DeltaE <= 0:
         sCurr = deepcopy(sNext)
         retAll = deepcopy(retAllNext)
@@ -298,7 +299,7 @@ while active:
             sCurr = deepcopy(sNext)
             retAll = deepcopy(retAllNext)
             EAvgCurr = EAvgNext
-
+    print("sNext="+str(sNext))
     record.sAll.append(deepcopy(sCurr))
     record.EAvgAll.append(EAvgCurr)
     record.data.append(deepcopy(retAll))
