@@ -81,7 +81,7 @@ def hEig(js):
 
     return [j,s,vals,vecs]
 
-def bisection_method(f,tol=1e-16,maxiter=10000):
+def bisection_method(f,tol=1e-9,maxiter=10000):
     """
 
     :param f: an monotonically increasing function
@@ -192,16 +192,16 @@ def combineRetFromhEig(retAll):
 blkSize=100
 blkNum=50
 
-class computationData:#holding computational results to be dumped using pickle
-    def __init__(self):
-        # self.T=TEst
-        self.blkSize=blkSize
-        self.blkNum=blkNum
-        self.data=[]
-        self.sAll=[]
-        self.EAvgAll=[]
-        self.TEq=1000
-        self.equilibrium=False
+# class computationData:#holding computational results to be dumped using pickle
+#     def __init__(self):
+#         # self.T=TEst
+#         self.blkSize=blkSize
+#         self.blkNum=blkNum
+#         self.data=[]
+#         self.sAll=[]
+#         self.EAvgAll=[]
+#         self.TEq=1000
+#         self.equilibrium=False
 
 # def flipInd(i):
 #     """
@@ -219,7 +219,9 @@ class computationData:#holding computational results to be dumped using pickle
 #     """
 #     return random.random()
 
-record=computationData()
+recordsAll=[]
+recordEAvgAll=[]
+recordDataAll=[]
 # totalMCLength=2
 
 #indices of s to be flippd
@@ -303,9 +305,9 @@ while active:
             retAll = deepcopy(retAllNext)
             EAvgCurr = EAvgNext
     print("sNext="+str(sNext))
-    record.sAll.append(deepcopy(sCurr))
-    record.EAvgAll.append(EAvgCurr)
-    record.data.append(deepcopy(retAll))
+    recordsAll.append(sCurr)
+    recordEAvgAll.append(EAvgCurr)
+    recordDataAll.append(retAll)
     tau+=1
     if tau%500==0:
         print("sweep "+str(tau))
