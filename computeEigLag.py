@@ -76,15 +76,16 @@ def hEig(js):
 
     dg = g * diags(s, dtype=complex, format="lil")
     h += kron(dg, upup) - kron(dg, downdown)
-
+    # tDiagStart=datetime.now()
     vals, vecs=eigh(h.toarray())
-
+    # tDiagEnd=datetime.now()
+    # print("diagonalization time: ",tDiagEnd-tDiagEnd)
     return [j,s,vals,vecs]
 
-def bisection_method(f,tol=1e-16,maxiter=10000):
+def bisection_method(f,tol=1e-9,maxiter=10000):
     """
 
-    :param f: an monotonically increasing function
+    :param f: a monotonically increasing function
     :param tol: length of the interval containing the root
     :param maxiter: maximum iteration number
     :return: root of f=0
@@ -158,7 +159,16 @@ def s2Eig(sCurr):
     pool0=Pool(procNum)
     retAll=pool0.map(hEig,inValsAll)
     return retAll
+def s2EigSerial(sCurr):
+    """
 
+    :param sCurr: current value of vector s
+    :return: eigenvalues and eigenvectors given s serially
+    """
+    retAll=[]
+    for j in range(0,len(KSupValsAll)):
+        retAll.append(hEig([j,sCurr]))
+    return retAll
 def combineRetFromhEig(retAll):
     """
 
@@ -242,7 +252,7 @@ sCurr=np.array(sCurr)
 # record.T=TEst
 
 #init eigenvalues and eigenvectors
-retAll=s2Eig(sCurr)
+retAll=s2EigSerial(sCurr)
 EVec=combineRetFromhEig(retAll)
 EAvgCurr=avgEnergy(EVec)
 tInitEnd=datetime.now()
@@ -292,10 +302,17 @@ while active:
     sNext = deepcopy(sCurr)
     flipIndVal=random.randint(0,L-1)
     sNext[flipIndVal] *= -1
-    retAllNext = s2Eig(sNext)
+    # tEigStart=datetime.now()
+    retAllNext = s2EigSerial(sNext)
+    # tEigEnd=datetime.now()
+    # print("one step eig time: ",tEigEnd-tEigStart)
+    # tSolveEqnStart=datetime.now()
     EVecNext = combineRetFromhEig(retAllNext)
     EAvgNext = avgEnergy(EVecNext)
     DeltaE = EAvgNext - EAvgCurr
+    # tSolveEqnEnd=datetime.now()
+    # print("solve mu :",tSolveEqnEnd-tSolveEqnStart)
+    # tFlipStart=datetime.now()
     if DeltaE <= 0:
         sCurr = deepcopy(sNext)
         retAll = deepcopy(retAllNext)
@@ -305,23 +322,26 @@ while active:
             sCurr = deepcopy(sNext)
             retAll = deepcopy(retAllNext)
             EAvgCurr = EAvgNext
-
-    record.sAll.append(deepcopy(sCurr))
+    # tFlipEnd=datetime.now()
+    # print("flip time: ",tFlipEnd-tFlipStart)
+    record.sAll.append(sCurr)
     record.EAvgAll.append(EAvgCurr)
-    record.data.append(deepcopy(retAll))
+    record.data.append(retAll)
     tOneMCStepEnd=datetime.now()
     print("one step MC :",tOneMCStepEnd-tOneMCStepStart)
     tau+=1
+    print("=====================================")
+
     if tau%500==0:
         print("sweep "+str(tau))
     toEquilibriumCounter+=1
     if toEquilibriumCounter>maxEquilbrationStep:
         break
-    if tau>=5000 and  tau%1000==0:
-        reachEq=autc(record.sAll)
-        if reachEq==True:
-            record.equilibrium=True
-            active=False
+    # if tau>=5000 and  tau%1000==0:
+    #     reachEq=autc(record.sAll)
+    #     if reachEq==True:
+    #         record.equilibrium=True
+    #         active=False
 
 tEqEnd=datetime.now()
 print("equilibrium time: ",tEqEnd-tEqStart)
@@ -337,7 +357,7 @@ for tau in range(TEq,TEq+blkNum*blkSize):
     sNext = deepcopy(sCurr)
     flipIndVal = random.randint(0, L - 1)
     sNext[flipIndVal] *= -1
-    retAllNext = s2Eig(sNext)
+    retAllNext = s2EigSerial(sNext)
     EVecNext = combineRetFromhEig(retAllNext)
     EAvgNext = avgEnergy(EVecNext)
     DeltaE = EAvgNext - EAvgCurr
