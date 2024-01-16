@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 blkSize=100
 blkNum=50
 
-beta=100
+beta=0.1
 
 class computationData:#holding computational results to be dumped using pickle
     def __init__(self):
@@ -49,3 +49,4 @@ plt.ylabel("$<E>$")
 
 plt.savefig("E"+inFilePrefix+"AvgE.png")
 # print(record.EAvgAll[-50:])
+print(record.sAll[-10:])

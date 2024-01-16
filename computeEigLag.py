@@ -297,6 +297,8 @@ tau=0
 tEqStart=datetime.now()
 #to reach equilibrium of MCMC
 while active:
+    print("step "+str(tau))
+
     tOneMCStepStart=datetime.now()
     #flip s
     sNext = deepcopy(sCurr)
@@ -317,11 +319,14 @@ while active:
         sCurr = deepcopy(sNext)
         retAll = deepcopy(retAllNext)
         EAvgCurr=EAvgNext
+        print("flipped")
     else:
         if random.random() < np.exp(-beta * DeltaE):
             sCurr = deepcopy(sNext)
             retAll = deepcopy(retAllNext)
             EAvgCurr = EAvgNext
+        else:
+            print("not flipped")
     # tFlipEnd=datetime.now()
     # print("flip time: ",tFlipEnd-tFlipStart)
     record.sAll.append(sCurr)
@@ -386,7 +391,7 @@ print("Sampling time: ",tSampleEnd-tSampleStart)
 tMCEnd=datetime.now()
 print("MC time: ", tMCEnd-tMCStart)
 
-outPklFileName="beta"+str(beta)+"out.pkl"
+outPklFileName="beta"+str(beta)+"t"+str(t)+"J"+str(J)+"g"+str(g)+"out.pkl"
 with open(outPklFileName,"wb") as fptr:
     pickle.dump(record,fptr, pickle.HIGHEST_PROTOCOL)
 
