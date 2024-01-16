@@ -13,7 +13,7 @@ from scipy.linalg import eigh
 
 blkSize=100
 blkNum=50
-beta=0.1
+beta=100
 class computationData:#holding computational results to be dumped using pickle
     def __init__(self):
         # self.T=TEst
@@ -221,7 +221,8 @@ def combineRetFromhEig(retAll):
 tS2EigStart=datetime.now()
 retKAll=s2Eig(S)
 EVec=combineRetFromhEig(retKAll)
-EAvgCurr=avgEnergy(EVec)
+chemPot=chemicalPotential(EVec)
+# EAvgCurr=avgEnergy(EVec)
 tS2EigEnd=datetime.now()
 
 print("eig time: ",tS2EigEnd-tS2EigStart)
@@ -347,7 +348,7 @@ for i in range(0,L):
 
 plt.xlabel("$k/\pi$")
 plt.ylabel("Energy")
-
+plt.axhline(y=chemPot, color='blue', linestyle='-')
 kPrimValsAll=[2*np.pi*n/(L*M) for n in range(0,L*M-1)]
 kPrimValsAll=np.array(kPrimValsAll)
 # plt.plot(kPrimValsAll/np.pi,-2*t*np.cos(kPrimValsAll),color="black")
