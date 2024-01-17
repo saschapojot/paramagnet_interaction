@@ -299,9 +299,9 @@ flipNum=0
 notFlipNum=0
 #to reach equilibrium of MCMC
 while active:
-    # print("step "+str(tau))
+    print("step "+str(tau))
 
-    # tOneMCStepStart=datetime.now()
+    tOneMCStepStart=datetime.now()
     #flip s
     sNext = deepcopy(sCurr)
     flipIndVal=random.randint(0,L-1)
@@ -317,26 +317,26 @@ while active:
     # tSolveEqnEnd=datetime.now()
     # print("solve mu :",tSolveEqnEnd-tSolveEqnStart)
     # tFlipStart=datetime.now()
-    # print("Delta E="+str(DeltaE))
+    print("Delta E="+str(DeltaE))
     if DeltaE <= 0:
         sCurr = deepcopy(sNext)
         retAll = deepcopy(retAllNext)
         EAvgCurr=EAvgNext
-        # print("flipped")
+        print("flipped")
         flipNum+=1
     else:
         r=random.random()
 
-        # print("r="+str(r))
-        # print("exp(-beta*Delta E)=" + str(np.exp(-beta * DeltaE)))
+        print("r="+str(r))
+        print("exp(-beta*Delta E)=" + str(np.exp(-beta * DeltaE)))
         if r < np.exp(-beta * DeltaE):
             sCurr = deepcopy(sNext)
             retAll = deepcopy(retAllNext)
             EAvgCurr = EAvgNext
-            # print("flipped")
+            print("flipped")
             flipNum+=1
         else:
-            # print("not flipped")
+            print("not flipped")
             notFlipNum+=1
     # tFlipEnd=datetime.now()
     # print("flip time: ",tFlipEnd-tFlipStart)
@@ -344,9 +344,9 @@ while active:
     record.EAvgAll.append(EAvgCurr)
     record.data.append(retAll)
     tOneMCStepEnd=datetime.now()
-    # print("one step MC :",tOneMCStepEnd-tOneMCStepStart)
+    print("one step MC :",tOneMCStepEnd-tOneMCStepStart)
     tau+=1
-    # print("=====================================")
+    print("=====================================")
 
     if tau%500==0:
         print("sweep "+str(tau))
@@ -367,7 +367,8 @@ record.TEq=TEq
 tSampleStart=datetime.now()
 #sampling after equilibrium
 for tau in range(TEq,TEq+1000):#blkNum*blkSize):
-    # print("step " + str(tau))
+    print("step " + str(tau))
+    tOneMCStepStart = datetime.now()
     # flip s
     if tau%500==0:
         print("sweep "+str(tau))
@@ -378,31 +379,34 @@ for tau in range(TEq,TEq+1000):#blkNum*blkSize):
     EVecNext = combineRetFromhEig(retAllNext)
     EAvgNext = avgEnergy(EVecNext)
     DeltaE = (EAvgNext - EAvgCurr)/M
-    # print("Delta E=" + str(DeltaE))
+    print("Delta E=" + str(DeltaE))
     if DeltaE <= 0:
         sCurr = deepcopy(sNext)
         retAll = deepcopy(retAllNext)
         EAvgCurr = EAvgNext
-        # print("flipped")
+        print("flipped")
         flipNum+=1
     else:
         r = random.random()
 
-        # print("r=" + str(r))
-        # print("exp(-beta*Delta E)=" + str(np.exp(-beta * DeltaE)))
+        print("r=" + str(r))
+        print("exp(-beta*Delta E)=" + str(np.exp(-beta * DeltaE)))
         if r < np.exp(-beta * DeltaE):
             sCurr = deepcopy(sNext)
             retAll = deepcopy(retAllNext)
             EAvgCurr = EAvgNext
-            # print("flipped")
+            print("flipped")
             flipNum+=1
         else:
-            # print("not flipped")
+            print("not flipped")
             notFlipNum+=1
 
     record.sAll.append(deepcopy(sCurr))
     record.EAvgAll.append(EAvgCurr)
     record.data.append(deepcopy(retAll))
+    tOneMCStepEnd = datetime.now()
+    print("one step MC :", tOneMCStepEnd - tOneMCStepStart)
+    print("=====================================")
 
 
 
