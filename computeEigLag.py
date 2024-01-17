@@ -15,18 +15,18 @@ import statsmodels.api as sm
 #this script computes the eigenvalue problem of each element in the Markov chain
 #for 1 set of [L,M,J,t,g] parameters
 
-
+random.seed(10)
 L=10
 M=20
 
-Ne=L*M
+Ne=M
 
 
 t=0.4
 J=2.5
 g=-0.05
 KSupValsAll=[2*np.pi*j/(L*M) for j in range(0,M)]
-beta=10
+beta=0.1
 procNum=48
 #construct h(K,s)
 # hPart=lil_matrix((2 * L, 2 * L), dtype=complex)
@@ -82,7 +82,7 @@ def hEig(js):
     # print("diagonalization time: ",tDiagEnd-tDiagEnd)
     return [j,s,vals,vecs]
 
-def bisection_method(f,tol=1e-9,maxiter=10000):
+def bisection_method(f,tol=1e-8,maxiter=10000):
     """
 
     :param f: a monotonically increasing function
@@ -290,16 +290,18 @@ def autc(sAll):
 
 
 active=True
-maxEquilbrationStep=10000
+maxEquilbrationStep=1000
 
 toEquilibriumCounter=0
 tau=0
 tEqStart=datetime.now()
+flipNum=0
+notFlipNum=0
 #to reach equilibrium of MCMC
 while active:
-    print("step "+str(tau))
+    # print("step "+str(tau))
 
-    tOneMCStepStart=datetime.now()
+    # tOneMCStepStart=datetime.now()
     #flip s
     sNext = deepcopy(sCurr)
     flipIndVal=random.randint(0,L-1)
@@ -311,31 +313,40 @@ while active:
     # tSolveEqnStart=datetime.now()
     EVecNext = combineRetFromhEig(retAllNext)
     EAvgNext = avgEnergy(EVecNext)
-    DeltaE = EAvgNext - EAvgCurr
+    DeltaE = (EAvgNext - EAvgCurr)/M
     # tSolveEqnEnd=datetime.now()
     # print("solve mu :",tSolveEqnEnd-tSolveEqnStart)
     # tFlipStart=datetime.now()
+    # print("Delta E="+str(DeltaE))
     if DeltaE <= 0:
         sCurr = deepcopy(sNext)
         retAll = deepcopy(retAllNext)
         EAvgCurr=EAvgNext
-        print("flipped")
+        # print("flipped")
+        flipNum+=1
     else:
-        if random.random() < np.exp(-beta * DeltaE):
+        r=random.random()
+
+        # print("r="+str(r))
+        # print("exp(-beta*Delta E)=" + str(np.exp(-beta * DeltaE)))
+        if r < np.exp(-beta * DeltaE):
             sCurr = deepcopy(sNext)
             retAll = deepcopy(retAllNext)
             EAvgCurr = EAvgNext
+            # print("flipped")
+            flipNum+=1
         else:
-            print("not flipped")
+            # print("not flipped")
+            notFlipNum+=1
     # tFlipEnd=datetime.now()
     # print("flip time: ",tFlipEnd-tFlipStart)
     record.sAll.append(sCurr)
     record.EAvgAll.append(EAvgCurr)
     record.data.append(retAll)
     tOneMCStepEnd=datetime.now()
-    print("one step MC :",tOneMCStepEnd-tOneMCStepStart)
+    # print("one step MC :",tOneMCStepEnd-tOneMCStepStart)
     tau+=1
-    print("=====================================")
+    # print("=====================================")
 
     if tau%500==0:
         print("sweep "+str(tau))
@@ -355,7 +366,8 @@ record.TEq=TEq
 
 tSampleStart=datetime.now()
 #sampling after equilibrium
-for tau in range(TEq,TEq+blkNum*blkSize):
+for tau in range(TEq,TEq+1000):#blkNum*blkSize):
+    # print("step " + str(tau))
     # flip s
     if tau%500==0:
         print("sweep "+str(tau))
@@ -365,16 +377,28 @@ for tau in range(TEq,TEq+blkNum*blkSize):
     retAllNext = s2EigSerial(sNext)
     EVecNext = combineRetFromhEig(retAllNext)
     EAvgNext = avgEnergy(EVecNext)
-    DeltaE = EAvgNext - EAvgCurr
+    DeltaE = (EAvgNext - EAvgCurr)/M
+    # print("Delta E=" + str(DeltaE))
     if DeltaE <= 0:
         sCurr = deepcopy(sNext)
         retAll = deepcopy(retAllNext)
         EAvgCurr = EAvgNext
+        # print("flipped")
+        flipNum+=1
     else:
-        if random.random() < np.exp(-beta * DeltaE):
+        r = random.random()
+
+        # print("r=" + str(r))
+        # print("exp(-beta*Delta E)=" + str(np.exp(-beta * DeltaE)))
+        if r < np.exp(-beta * DeltaE):
             sCurr = deepcopy(sNext)
             retAll = deepcopy(retAllNext)
             EAvgCurr = EAvgNext
+            # print("flipped")
+            flipNum+=1
+        else:
+            # print("not flipped")
+            notFlipNum+=1
 
     record.sAll.append(deepcopy(sCurr))
     record.EAvgAll.append(EAvgCurr)
@@ -390,7 +414,8 @@ print("Sampling time: ",tSampleEnd-tSampleStart)
 
 tMCEnd=datetime.now()
 print("MC time: ", tMCEnd-tMCStart)
-
+print("flip num: "+str(flipNum))
+print("no flip num: "+str(notFlipNum))
 outPklFileName="beta"+str(beta)+"t"+str(t)+"J"+str(J)+"g"+str(g)+"out.pkl"
 with open(outPklFileName,"wb") as fptr:
     pickle.dump(record,fptr, pickle.HIGHEST_PROTOCOL)
