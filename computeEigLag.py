@@ -19,14 +19,14 @@ random.seed(10)
 L=10
 M=20
 
-Ne=L*M
+Ne=M
 
 
 t=0.4
 J=2.5
 g=-0.05
 KSupValsAll=[2*np.pi*j/(L*M) for j in range(0,M)]
-beta=10
+beta=0.1
 procNum=48
 #construct h(K,s)
 # hPart=lil_matrix((2 * L, 2 * L), dtype=complex)
@@ -82,7 +82,7 @@ def hEig(js):
     # print("diagonalization time: ",tDiagEnd-tDiagEnd)
     return [j,s,vals,vecs]
 
-def bisection_method(f,tol=1e-9,maxiter=10000):
+def bisection_method(f,tol=1e-8,maxiter=10000):
     """
 
     :param f: a monotonically increasing function
@@ -290,7 +290,7 @@ def autc(sAll):
 
 
 active=True
-maxEquilbrationStep=10000
+maxEquilbrationStep=1000
 
 toEquilibriumCounter=0
 tau=0
@@ -313,10 +313,11 @@ while active:
     # tSolveEqnStart=datetime.now()
     EVecNext = combineRetFromhEig(retAllNext)
     EAvgNext = avgEnergy(EVecNext)
-    DeltaE = EAvgNext - EAvgCurr
+    DeltaE = (EAvgNext - EAvgCurr)/M
     # tSolveEqnEnd=datetime.now()
     # print("solve mu :",tSolveEqnEnd-tSolveEqnStart)
     # tFlipStart=datetime.now()
+    print("Delta E="+str(DeltaE))
     if DeltaE <= 0:
         sCurr = deepcopy(sNext)
         retAll = deepcopy(retAllNext)
@@ -365,7 +366,9 @@ record.TEq=TEq
 
 tSampleStart=datetime.now()
 #sampling after equilibrium
-for tau in range(TEq,TEq+blkNum*blkSize):
+for tau in range(TEq,TEq+1000):#blkNum*blkSize):
+    print("step " + str(tau))
+    tOneMCStepStart = datetime.now()
     # flip s
     if tau%500==0:
         print("sweep "+str(tau))
@@ -375,7 +378,8 @@ for tau in range(TEq,TEq+blkNum*blkSize):
     retAllNext = s2EigSerial(sNext)
     EVecNext = combineRetFromhEig(retAllNext)
     EAvgNext = avgEnergy(EVecNext)
-    DeltaE = EAvgNext - EAvgCurr
+    DeltaE = (EAvgNext - EAvgCurr)/M
+    print("Delta E=" + str(DeltaE))
     if DeltaE <= 0:
         sCurr = deepcopy(sNext)
         retAll = deepcopy(retAllNext)
@@ -400,6 +404,9 @@ for tau in range(TEq,TEq+blkNum*blkSize):
     record.sAll.append(deepcopy(sCurr))
     record.EAvgAll.append(EAvgCurr)
     record.data.append(deepcopy(retAll))
+    tOneMCStepEnd = datetime.now()
+    print("one step MC :", tOneMCStepEnd - tOneMCStepStart)
+    print("=====================================")
 
 
 
