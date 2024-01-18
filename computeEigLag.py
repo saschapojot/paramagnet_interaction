@@ -15,7 +15,7 @@ import statsmodels.api as sm
 #this script computes the eigenvalue problem of each element in the Markov chain
 #for 1 set of [L,M,J,t,g] parameters
 
-
+random.seed(10)
 L=10
 M=20
 
@@ -295,6 +295,8 @@ maxEquilbrationStep=10000
 toEquilibriumCounter=0
 tau=0
 tEqStart=datetime.now()
+flipNum=0
+notFlipNum=0
 #to reach equilibrium of MCMC
 while active:
     print("step "+str(tau))
@@ -320,13 +322,21 @@ while active:
         retAll = deepcopy(retAllNext)
         EAvgCurr=EAvgNext
         print("flipped")
+        flipNum+=1
     else:
-        if random.random() < np.exp(-beta * DeltaE):
+        r=random.random()
+
+        print("r="+str(r))
+        print("exp(-beta*Delta E)=" + str(np.exp(-beta * DeltaE)))
+        if r < np.exp(-beta * DeltaE):
             sCurr = deepcopy(sNext)
             retAll = deepcopy(retAllNext)
             EAvgCurr = EAvgNext
+            print("flipped")
+            flipNum+=1
         else:
             print("not flipped")
+            notFlipNum+=1
     # tFlipEnd=datetime.now()
     # print("flip time: ",tFlipEnd-tFlipStart)
     record.sAll.append(sCurr)
@@ -370,11 +380,22 @@ for tau in range(TEq,TEq+blkNum*blkSize):
         sCurr = deepcopy(sNext)
         retAll = deepcopy(retAllNext)
         EAvgCurr = EAvgNext
+        print("flipped")
+        flipNum+=1
     else:
-        if random.random() < np.exp(-beta * DeltaE):
+        r = random.random()
+
+        print("r=" + str(r))
+        print("exp(-beta*Delta E)=" + str(np.exp(-beta * DeltaE)))
+        if r < np.exp(-beta * DeltaE):
             sCurr = deepcopy(sNext)
             retAll = deepcopy(retAllNext)
             EAvgCurr = EAvgNext
+            print("flipped")
+            flipNum+=1
+        else:
+            print("not flipped")
+            notFlipNum+=1
 
     record.sAll.append(deepcopy(sCurr))
     record.EAvgAll.append(EAvgCurr)
@@ -390,7 +411,8 @@ print("Sampling time: ",tSampleEnd-tSampleStart)
 
 tMCEnd=datetime.now()
 print("MC time: ", tMCEnd-tMCStart)
-
+print("flip num: "+str(flipNum))
+print("no flip num: "+str(notFlipNum))
 outPklFileName="beta"+str(beta)+"t"+str(t)+"J"+str(J)+"g"+str(g)+"out.pkl"
 with open(outPklFileName,"wb") as fptr:
     pickle.dump(record,fptr, pickle.HIGHEST_PROTOCOL)
