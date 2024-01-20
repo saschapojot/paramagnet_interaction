@@ -142,12 +142,12 @@ def avgEnergy(EVec):
     """
 
     :param EVec: a vector containing E for all K for all j=0,1,...,2L-1
-    :return: average value of energy
+    :return: average value of energy, chemical potential
     """
     muVal=chemicalPotential(EVec)
     weightedEng=[1/(np.exp(beta*(e-muVal))+1)*e for e in EVec]
 
-    return np.sum(weightedEng)
+    return [np.sum(weightedEng), muVal]
 
 def s2Eig(sCurr):
     """
@@ -177,7 +177,7 @@ def combineRetFromhEig(retAll):
     """
     EVec=[]
     for item in retAll:
-        _,_,vals,_=item
+        _,vals,_=item
         for e in vals:
             EVec.append(e)
     return EVec
@@ -210,6 +210,7 @@ class computationData:#holding computational results to be dumped using pickle
         self.data=[]
         self.sAll=[]
         self.EAvgAll=[]
+        self.chemPotAll=[]
         self.TEq=1000
         self.equilibrium=False
 
@@ -254,7 +255,7 @@ sCurr=np.array(sCurr)
 #init eigenvalues and eigenvectors
 retAll=s2EigSerial(sCurr)
 EVec=combineRetFromhEig(retAll)
-EAvgCurr=avgEnergy(EVec)
+EAvgCurr,muCurr=avgEnergy(EVec)
 tInitEnd=datetime.now()
 print("init time: ",tInitEnd-tInitStart)
 
@@ -312,7 +313,7 @@ while active:
     # print("one step eig time: ",tEigEnd-tEigStart)
     # tSolveEqnStart=datetime.now()
     EVecNext = combineRetFromhEig(retAllNext)
-    EAvgNext = avgEnergy(EVecNext)
+    EAvgNext,muNext = avgEnergy(EVecNext)
     DeltaE = (EAvgNext - EAvgCurr)/M
     # tSolveEqnEnd=datetime.now()
     # print("solve mu :",tSolveEqnEnd-tSolveEqnStart)
@@ -322,6 +323,7 @@ while active:
         sCurr = deepcopy(sNext)
         retAll = deepcopy(retAllNext)
         EAvgCurr=EAvgNext
+        muCurr=muNext
         print("flipped")
         flipNum+=1
     else:
@@ -333,6 +335,7 @@ while active:
             sCurr = deepcopy(sNext)
             retAll = deepcopy(retAllNext)
             EAvgCurr = EAvgNext
+            muCurr=muNext
             print("flipped")
             flipNum+=1
         else:
@@ -343,13 +346,14 @@ while active:
     record.sAll.append(sCurr)
     record.EAvgAll.append(EAvgCurr)
     record.data.append(retAll)
+    record.chemPotAll.append(muCurr)
     tOneMCStepEnd=datetime.now()
     print("one step MC :",tOneMCStepEnd-tOneMCStepStart)
     tau+=1
     print("=====================================")
 
     if tau%500==0:
-        print("sweep "+str(tau))
+        print("flip "+str(tau))
     toEquilibriumCounter+=1
     if toEquilibriumCounter>maxEquilbrationStep:
         break
@@ -371,19 +375,20 @@ for tau in range(TEq,TEq+1000):#blkNum*blkSize):
     tOneMCStepStart = datetime.now()
     # flip s
     if tau%500==0:
-        print("sweep "+str(tau))
+        print("flip "+str(tau))
     sNext = deepcopy(sCurr)
     flipIndVal = random.randint(0, L - 1)
     sNext[flipIndVal] *= -1
     retAllNext = s2EigSerial(sNext)
     EVecNext = combineRetFromhEig(retAllNext)
-    EAvgNext = avgEnergy(EVecNext)
+    EAvgNext,muNext = avgEnergy(EVecNext)
     DeltaE = (EAvgNext - EAvgCurr)/M
     print("Delta E=" + str(DeltaE))
     if DeltaE <= 0:
         sCurr = deepcopy(sNext)
         retAll = deepcopy(retAllNext)
         EAvgCurr = EAvgNext
+        muCurr=muNext
         print("flipped")
         flipNum+=1
     else:
@@ -395,6 +400,7 @@ for tau in range(TEq,TEq+1000):#blkNum*blkSize):
             sCurr = deepcopy(sNext)
             retAll = deepcopy(retAllNext)
             EAvgCurr = EAvgNext
+            muCurr = muNext
             print("flipped")
             flipNum+=1
         else:
@@ -404,6 +410,7 @@ for tau in range(TEq,TEq+1000):#blkNum*blkSize):
     record.sAll.append(deepcopy(sCurr))
     record.EAvgAll.append(EAvgCurr)
     record.data.append(deepcopy(retAll))
+    record.chemPotAll.append(muCurr)
     tOneMCStepEnd = datetime.now()
     print("one step MC :", tOneMCStepEnd - tOneMCStepStart)
     print("=====================================")
