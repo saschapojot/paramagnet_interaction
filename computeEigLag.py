@@ -61,7 +61,7 @@ def hEig(js):
     """
 
     :param js: j: index of K, s: vector of magnetization on each site
-    :return: j, s, eigenvalues and eigenvectors of matrix h
+    :return: j, eigenvalues and eigenvectors of matrix h
     """
     j,s=js
 
@@ -80,7 +80,7 @@ def hEig(js):
     vals, vecs=eigh(h.toarray())
     # tDiagEnd=datetime.now()
     # print("diagonalization time: ",tDiagEnd-tDiagEnd)
-    return [j,s,vals,vecs]
+    return [j,vals,vecs]
 
 def bisection_method(f,tol=1e-8,maxiter=10000):
     """
