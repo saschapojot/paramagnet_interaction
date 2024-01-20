@@ -110,7 +110,7 @@ def constructAlly(retSortedAll,supCellLength,KSupValsAll):
 
     print("construct all y: ",tyEnd-tyStart)
 
-    return retyAll
+    return yAllMat
 
 
 
@@ -146,3 +146,71 @@ def perturbedSupEigenValsAndVecs(hSupPerturbed,KSupValsAll):
     return  retPertSupSortedAll
 
 
+def proj(yAllMat,retPertSupSortedAll):
+    """
+
+    :param yAllMat: all of the y vectors, constructed from (unperterbed) supercell Hamiltonian
+    :param retPertSupSortedAll: all of the z vectors, solved from perturbed supercell Hamiltonian
+    :return:
+    """
+    M, supCellLength, sizehPrim,_=yAllMat.shape
+
+    def oneAMat(ma):
+        """
+
+        :param ma: [m,a]
+        :return: all projections
+        """
+        m,a=ma
+        A=[]
+        for b in range(0,2*supCellLength):
+            for j in range(0,sizehPrim):
+                zTmp=retPertSupSortedAll[m][2][:,b]
+                yTmp=yAllMat[m,a,j,:]
+                cTmp=np.abs(np.vdot(zTmp,yTmp))
+                ETmp=retPertSupSortedAll[m][1][b]
+                oneRowTmp=[m,a,j,ETmp,cTmp]
+                A.append(oneRowTmp)
+        A=sorted(A,key=lambda row: row[3])#sort by the value of E
+        return [m,a,A]
+
+    allma=[[m,a] for m in range(0,M) for a in range(0,supCellLength)]
+
+    procNum=48
+
+    tAllAStart=datetime.now()
+    pool3=Pool(procNum)
+    retAllAMat=pool3.map(oneAMat,allma)
+
+    tAllAEnd=datetime.now()
+
+    print("all A mats time: ",tAllAEnd-tAllAStart)
+
+    return retAllAMat
+
+
+
+def mapping(hprim,kPrimAll,hSupPerturbed,KSupValsAll,supCellLength):
+    """
+
+    :param hprim: matrix function, (unperturbed) Hamiltonian of primitive cell
+    :param kPrimAll: momentum values in BZ (for primitive cell)
+    :param hSupPerturbed: perturbed Hamiltonian for momentum in SBZ (supercell)
+    :param KSupValsAll: momentum values in SBZ (supercell)
+    :param supCellLength: length of supercell
+    :return:
+    """
+
+    #solve eigenvalue problem of (unperturbed) primitive cell's Hamiltonian
+    retSortedAllPrim=primEigenValsAndVecs(hprim,kPrimAll)
+
+    #construct (unperturbed) supercell Hamiltonian's eigenvectors
+    yAllMat=constructAlly(retSortedAllPrim,supCellLength,KSupValsAll)
+
+    #solve the eigenvalue problem of (perturbed) supercell's Hamiltonian
+    retPertSupSortedAll=perturbedSupEigenValsAndVecs(hSupPerturbed,KSupValsAll)
+
+    #perform projections to unfold the energy bands of the perturbed supercell's Hamiltonian
+    retAllAMat=proj(yAllMat,retPertSupSortedAll)
+
+    return retAllAMat
