@@ -2,215 +2,301 @@ import numpy as np
 from scipy.linalg import eigh
 from multiprocessing import Pool
 from datetime import datetime
-
-def x2y(a,supCellLength,Km,xVec):
-    """
-
-    :param a: a=0,1,...,supCellLength-1, group number
-    :param supCellLength: length of supercell
-    :param Km: momentum in SBZ
-    :param xVec: eigenvector solved from (unperturbed) primitive cell
-    :return: eigenvector of (unperturbed) supercell
-    """
-
-    yVec=[]
-    for r in range(0,supCellLength):
-        yVec+=list(xVec)
-    yVec=np.array(yVec)
-
-    length = len(xVec)
-    for r in range(0, supCellLength - 1):
-        yVec[r * length:(r + 1) * length] *= np.exp(1j * r * Km) * np.exp(1j * 2 * np.pi * r * a / supCellLength)
-    yVec /= np.linalg.norm(yVec, ord=2)#normalization
-    return yVec
-
-
-
-def primEigenValsAndVecs(hprim,kPrimAll):
-    """
-
-    :param hprim: matrix function, (unperturbed) Hamiltonian of primitive cell
-    :param kPrimAll: momentum values in BZ (for primitive cell)
-    :return: [...,[n,eigvals,eigvecs],...], sorted by n
-    """
-    NPrim=len(kPrimAll)
-
-
-    def oneEig(n):
+import pickle
+import matplotlib.pyplot as plt
+class mapperUnfolding():
+    def __init__(self, retEigPrimSortedAll,retEigSupSortedAll):
         """
 
-        :param n: index in kPrimIndsAll
-        :return: eigenvalues and eigenvectors of hprim(kn)
+        :param retEigPrimSortedAll: eigenvalues and eigenvectors solved from (unperturbed) primitive cell's Hamiltonian
+        :param retEigSupSortedAll: eigenvalues and eigenvectors solved from (perturbed) supercell's Hamiltonian
         """
-        hPrimMat=hprim(kPrimAll[n])
-        vals,vecs=eigh(hPrimMat)
-        return [n,vals,vecs]
-
-    kPrimIndsAll = [i for i in range(0, NPrim)]
-
-    procNum=48
-
-    pool0=Pool(procNum)
-    tPrimEigStart=datetime.now()
-    retAll=pool0.map(oneEig,kPrimIndsAll)
-
-    retSortedAll=sorted(retAll,key=lambda item:item[0])
-
-    tPrimEigEnd=datetime.now()
-
-    print("eig time for primitive cell Hamiltonian: ",tPrimEigEnd-tPrimEigStart)
-    return retSortedAll
+        retEigSupSortedAll=sorted(retEigSupSortedAll,key=lambda  item:item[0])
+        retEigPrimSortedAll = sorted(retEigPrimSortedAll, key=lambda item: item[0])
+        self.sizehPrim=len(retEigPrimSortedAll[0][1])# size of (unperturbed) primitive cells' Hamiltonian
+        self.retEigPrimSortedAll=retEigPrimSortedAll
+        self.retEigSupSortedAll=retEigSupSortedAll
+        self.NPrim=len(self.retEigPrimSortedAll)#number of values in BZ (of primitive cell)
+        self.M=len(self.retEigSupSortedAll)# number of values in SBZ (of supercell)
+        self.supCellLength=int(self.NPrim/self.M)
+        if self.NPrim%self.M !=0:
+            print("incompatible lengths")
+            exit(1)
+        self.kPrimAll=[2*np.pi*n/self.NPrim for n in range(0,self.NPrim)] #values in BZ
+        self.KSupValsAll=[2*np.pi*m/self.NPrim for m in range(0,self.M)]
+        self.yAllMat = np.zeros((self.M, self.supCellLength, self.sizehPrim, self.sizehPrim * self.supCellLength), dtype=complex)
 
 
 
-def constructAlly(retSortedAll,supCellLength,KSupValsAll):
-    """
 
-    :param retSortedAll: all eigenvectors and eigenvalues, from primEigenValsAndVecs(hprim,kPrimAll)
-    :param supCellLength: length of supercell
-    :param KSupValsAll: momentum values in SBZ (supercell)
-    :return: all of the y vectors
-    """
-    M=len(KSupValsAll)
-    if len(retSortedAll)%supCellLength !=0:
-        print("invalid length")
-        exit(1)
+    def x2y(self,a,Km,xVec):
+        """
 
-    sizehPrim=len(retSortedAll[0][1])
+        :param a: a=0,1,...,supCellLength-1, group number
+        :param Km: momentum in SBZ
+        :param xVec: eigenvector solved from (unperturbed) primitive cell
+        :return: eigenvector of (unperturbed) supercell
+        """
+        yVec = []
+        for r in range(0, self.supCellLength):
+            yVec += list(xVec)
+        yVec = np.array(yVec,dtype=complex)
+        length = len(xVec)
+        for r in range(0, self.supCellLength):
+            yVec[r * length:(r + 1) * length] *= np.exp(1j * r * Km) * np.exp(1j * 2 * np.pi * r * a / self.supCellLength)
+        yVec /= np.linalg.norm(yVec, ord=2)  # normalization
+        return yVec
 
-    yAllMat=np.zeros((M,supCellLength,sizehPrim,sizehPrim*supCellLength),dtype=complex)
-
-    def oney(maj):
+    def constructOney(self,maj):
         """
 
         :param maj: maj=[m,a,j]
         :return: y_{j}^{(a)}(K_{m})
         """
-        m,a,j=maj
-        Km=KSupValsAll[m]
-        n=m+a*M
-        xVec=retSortedAll[n][2][:,j]
-
-        yVec=x2y(a,supCellLength,Km,xVec)
-
+        m, a, j = maj
+        Km = self.KSupValsAll[m]
+        n = m + a * self.M
+        xVec=self.retEigPrimSortedAll[n][2][:,j]
+        yVec=self.x2y(a,Km,xVec)
         return [m,a,j,yVec]
 
-    majAll=[[m,a,j] for m in range(0,M) for a in range(0,supCellLength) for j in range(0,sizehPrim)]
-
-    procNum=48
-    pool1=Pool(procNum)
-    tyStart=datetime.now()
-    retyAll=pool1.map(oney,majAll)
-
-    for item in retyAll:
-        m,a,j,yVec=item
-        yAllMat[m,a,j,:]=yVec
-
-    tyEnd=datetime.now()
-
-    print("construct all y: ",tyEnd-tyStart)
-
-    return yAllMat
-
-
-
-def perturbedSupEigenValsAndVecs(hSupPerturbed,KSupValsAll):
-    """
-    :param hSupPerturbed: perturbed Hamiltonian for momentum in SBZ (supercell)
-    :param KSupValsAll: momentum values in SBZ (supercell)
-    :return: [...,[m,eigvals,eigvecs],...], sorted by m
-    """
-    M=len(KSupValsAll)
-
-    KSupIndsAll=[i for i in range(0,M)]
-
-    def oneEig(m):
+    def constructAlly(self):
         """
 
-        :param m: index in KSupIndsAll
-        :return: eigenvalues and eigenvectors of hSupPerturbed(Km)
+        :return: all y
         """
-        Km=KSupValsAll[m]
-        hSupPerturbedMat=hSupPerturbed(Km)
-        vals,vecs=eigh(hSupPerturbedMat)
-        return [m,vals,vecs]
-    procNum=48
 
-    pool2=Pool(procNum)
-    tSupEigStart=datetime.now()
-    retPertSupAll=pool2.map(oneEig,KSupIndsAll)
-    retPertSupSortedAll=sorted(retPertSupAll,key=lambda item:item[0])
-    tSupEigEnd=datetime.now()
-
-    print("eig time for supercell perturbed Hamiltonian: ",tSupEigEnd-tSupEigStart)
-    return  retPertSupSortedAll
+        majAll = [[m, a, j] for m in range(0, self.M) for a in range(0, self.supCellLength) for j in
+                       range(0, self.sizehPrim)]
 
 
-def proj(yAllMat,retPertSupSortedAll):
-    """
+        procNum=48
+        pool1=Pool(procNum)
+        # tyStart = datetime.now()
+        retyAll=pool1.map(self.constructOney,majAll)
 
-    :param yAllMat: all of the y vectors, constructed from (unperterbed) supercell Hamiltonian
-    :param retPertSupSortedAll: all of the z vectors, solved from perturbed supercell Hamiltonian
-    :return:
-    """
-    M, supCellLength, sizehPrim,_=yAllMat.shape
+        for item in retyAll:
+            m, a, j, yVec = item
+            self.yAllMat[m, a, j, :] = yVec
+        # tyEnd = datetime.now()
+        # print("construct all y: ", tyEnd - tyStart)
 
-    def oneAMat(ma):
+    def oneAMat(self,ma):
         """
 
         :param ma: [m,a]
-        :return: all projections
+        :return: all projections for m and a
         """
+
         m,a=ma
         A=[]
-        for b in range(0,2*supCellLength):
-            for j in range(0,sizehPrim):
-                zTmp=retPertSupSortedAll[m][2][:,b]
-                yTmp=yAllMat[m,a,j,:]
+        for b in range(0, self.sizehPrim * self.supCellLength):
+            for j in range(0, self.sizehPrim):
+                zTmp=self.retEigSupSortedAll[m][2][:,b]
+                # zTmp/=np.linalg.norm(zTmp,ord=2)
+                yTmp=self.yAllMat[m,a,j,:]
                 cTmp=np.abs(np.vdot(zTmp,yTmp))
-                ETmp=retPertSupSortedAll[m][1][b]
-                oneRowTmp=[m,a,j,ETmp,cTmp]
+                ETmp=self.retEigSupSortedAll[m][1][b]
+                oneRowTmp=[m,a,j,ETmp,cTmp,b]
                 A.append(oneRowTmp)
-        A=sorted(A,key=lambda row: row[3])#sort by the value of E
-        return [m,a,A]
 
-    allma=[[m,a] for m in range(0,M) for a in range(0,supCellLength)]
+        A = sorted(A, key=lambda row: row[3])  # sort by the value of E
+        return [m, a, A]
 
-    procNum=48
+    def proj(self):
+        """
 
-    tAllAStart=datetime.now()
-    pool3=Pool(procNum)
-    retAllAMat=pool3.map(oneAMat,allma)
+        :return: all of the projections
+        """
+        allma = [[m, a] for m in range(0, self.M) for a in range(0, self.supCellLength)]
+        procNum=48
 
-    tAllAEnd=datetime.now()
+        # tAllAStart = datetime.now()
+        pool3 = Pool(procNum)
+        retAllAMat = pool3.map(self.oneAMat, allma)
+        # tAllAEnd = datetime.now()
+        # print("all A mats time: ", tAllAEnd - tAllAStart)
+        self.retAllAMat=retAllAMat
 
-    print("all A mats time: ",tAllAEnd-tAllAStart)
 
-    return retAllAMat
+    def mapping(self):
+        """
+
+        :return: unfolded band and weights
+        """
+        self.constructAlly()
+        self.proj()
+
+    def allA2EMatcMat(self):
+        """
+
+        :return: All of the unfolded E values and weights
+        """
+        nRow = len(self.retAllAMat[0][2])
+        EMat = np.zeros((nRow, self.NPrim), dtype=float)
+        cMat = np.zeros((nRow, self.NPrim), dtype=float)
+        for item in self.retAllAMat:
+            _, _, A = item
+            for j in range(0, nRow):
+                m, a, _, E, c, _ = A[j]
+                n = m + a * M
+                EMat[j, n] = E
+                cMat[j, n] = c ** 2
+
+        return EMat, cMat
 
 
 
-def mapping(hprim,kPrimAll,hSupPerturbed,KSupValsAll,supCellLength):
-    """
+blkSize=100
+blkNum=50
 
-    :param hprim: matrix function, (unperturbed) Hamiltonian of primitive cell
-    :param kPrimAll: momentum values in BZ (for primitive cell)
-    :param hSupPerturbed: perturbed Hamiltonian for momentum in SBZ (supercell)
-    :param KSupValsAll: momentum values in SBZ (supercell)
-    :param supCellLength: length of supercell
-    :return:
-    """
+beta=0.1
 
-    #solve eigenvalue problem of (unperturbed) primitive cell's Hamiltonian
-    retSortedAllPrim=primEigenValsAndVecs(hprim,kPrimAll)
+class computationData:#holding computational results to be dumped using pickle
+    def __init__(self):
+        # self.T=TEst
+        self.blkSize=blkSize
+        self.blkNum=blkNum
+        self.data=[]
+        self.sAll=[]
+        self.EAvgAll=[]
+        self.TEq=1000
+        self.equilibrium=False
 
-    #construct (unperturbed) supercell Hamiltonian's eigenvectors
-    yAllMat=constructAlly(retSortedAllPrim,supCellLength,KSupValsAll)
+tLoadStart=datetime.now()
+L=10
+M=20
+t=0.4
+J=2.5
+g=-0.05
+inPklFile="beta"+str(beta)+"t"+str(t)+"J"+str(J)+"g"+str(g)+"out.pkl"
 
-    #solve the eigenvalue problem of (perturbed) supercell's Hamiltonian
-    retPertSupSortedAll=perturbedSupEigenValsAndVecs(hSupPerturbed,KSupValsAll)
+with open(inPklFile,"rb") as fptr:
+    record=pickle.load(fptr)
+tLoadEnd=datetime.now()
+print("loading time: ",tLoadEnd-tLoadStart)
 
-    #perform projections to unfold the energy bands of the perturbed supercell's Hamiltonian
-    retAllAMat=proj(yAllMat,retPertSupSortedAll)
 
-    return retAllAMat
+NPrim=L*M
+
+kPrimAll=[2*np.pi*n/NPrim for n in range(0,NPrim)]
+
+retEigPrimSortedAll=[]
+for n in range(0,NPrim):
+    kn=kPrimAll[n]
+    vals=[-2*t*np.cos(kn),-2*t*np.cos(kn)]
+    vecs=np.eye(2)
+    oneRow=[n,vals,vecs]
+    retEigPrimSortedAll.append(oneRow)
+
+dataLast=record.data[-500::10]
+
+EMatsAll=[]
+cMatsAll=[]
+
+tAvgStart=datetime.now()
+for oneRet in dataLast:
+    mapper=mapperUnfolding(retEigPrimSortedAll,oneRet)
+    mapper.mapping()
+
+    EMat, cMat = mapper.allA2EMatcMat()
+    EMatsAll.append(EMat)
+
+    cMatsAll.append(cMat)
+
+Num=len(dataLast)
+EMatAvg=np.zeros(EMatsAll[0].shape)
+cMatAvg=np.zeros(cMatsAll[0].shape)
+for EMat in EMatsAll:
+    EMatAvg+=EMat
+EMatAvg/=Num
+
+for cMat in cMatsAll:
+    cMatAvg+=cMat
+cMatAvg/=Num
+tAvgEnd=datetime.now()
+print("avg time: ",tAvgEnd-tAvgStart)
+kPrimIndsAll=[2*n/NPrim for n in range(0,NPrim)]
+plt.figure()
+for j in range(0,len(EMatAvg)):
+    plt.scatter(kPrimIndsAll,EMatAvg[j,:],s=cMatAvg[j,:],color="red")
+plt.xlabel("$k/\pi$")
+plt.ylabel("$E$")
+plt.title("$\\beta=$"+str(beta)+", $t=$"+str(t)+", $J=$"+str(J)+", $g=$"+str(g))
+plt.savefig("beta"+str(beta)+"t"+str(t)+"J"+str(J)+"g"+str(g)+".png")
+
+# mapper=mapperUnfolding(retEigPrimSortedAll,record.data[45])
+# mapper.mapping()
+# retAllAMat=mapper.retAllAMat
+# EMat, cMat=mapper.allA2EMatcMat()
+#
+#
+# kPrimIndsAll=[2*n/NPrim for n in range(0,NPrim)]
+# plt.figure()
+# for j in range(0,len(EMat)):
+#     plt.scatter(kPrimIndsAll,EMat[j,:],s=cMat[j,:],color="red")
+#
+# plt.savefig("tmp.png")
+
+
+# m=2
+# a=3
+# counter=0
+# for item in retAllAMat:
+#     m_,a_,A_=item
+#     if m_!=m or a_!=a:
+#         continue
+#     else:
+#         for oneRow in A_:
+#             _,_,_,E,_,_=oneRow
+#             print(E)
+#             counter+=1
+# print(counter)
+# counter=0
+# setm=2
+# setb=8
+# projs0=[]
+# projs1=[]
+# tmp=0
+# print(len(retAllAMat))
+# for item in retAllAMat:
+#     m,a,A=item
+#     if m!=setm:
+#         continue
+#     else:
+#         for oneRow in A:
+#             _,_,j,E,c,b=oneRow
+#             if b!=setb:
+#                 continue
+#             else:
+#                 if j==0:
+#                     projs0.append(c)
+#                 else:
+#                     projs1.append(c)
+#
+# projs0=np.array(projs0)
+# projs1=np.array(projs1)
+#
+# tmp0=np.sum(projs0**2)
+# tmp1=np.sum(projs1**2)
+#
+# print(tmp0)
+# print(tmp1)
+
+
+# print(sorted(inds,key=lambda item: item[0]))
+
+
+
+#
+# plt.figure()
+#
+# for item in retAllAMat:
+#     m,a,A=item
+#     for row in A:
+#         kPrimTmp=2*(m+a*M)/NPrim
+#         _,_,_,E,c=row
+#         plt.scatter(2*(m+a*M)/NPrim,E,s=c**2*10)
+#
+# plt.savefig("tmp.png")
+# plt.close()
