@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.linalg import eigh
+# from scipy.linalg import eigh
 from multiprocessing import Pool
 from datetime import datetime
 import pickle
@@ -191,7 +191,7 @@ for n in range(0,NPrim):
     retEigPrimSortedAll.append(oneRow)
 
 dataLast=record.data[-500::10]
-chemPotLast=record.chemPotAll[-500::10]
+chemPotLast=record.chemPotAll[-5000::50]
 EMatsAll=[]
 cMatsAll=[]
 
