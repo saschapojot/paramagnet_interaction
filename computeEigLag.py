@@ -26,7 +26,7 @@ t=0.4
 J=2.5
 g=-0.05
 KSupValsAll=[2*np.pi*j/(L*M) for j in range(0,M)]
-beta=0.1
+beta=0.01
 procNum=48
 #construct h(K,s)
 # hPart=lil_matrix((2 * L, 2 * L), dtype=complex)
@@ -168,7 +168,8 @@ def s2EigSerial(sCurr):
     retAll=[]
     for j in range(0,len(KSupValsAll)):
         retAll.append(hEig([j,sCurr]))
-    return retAll
+    retAllSorted=sorted(retAll,key=lambda item: item[0])
+    return retAllSorted
 def combineRetFromhEig(retAll):
     """
 
@@ -291,7 +292,7 @@ def autc(sAll):
 
 
 active=True
-maxEquilbrationStep=1000
+maxEquilbrationStep=10000
 
 toEquilibriumCounter=0
 tau=0
@@ -313,6 +314,7 @@ while active:
     # print("one step eig time: ",tEigEnd-tEigStart)
     # tSolveEqnStart=datetime.now()
     EVecNext = combineRetFromhEig(retAllNext)
+
     EAvgNext,muNext = avgEnergy(EVecNext)
     DeltaE = (EAvgNext - EAvgCurr)/M
     # tSolveEqnEnd=datetime.now()
@@ -347,6 +349,12 @@ while active:
     record.EAvgAll.append(EAvgCurr)
     record.data.append(retAll)
     record.chemPotAll.append(muCurr)
+    EVecTmp = combineRetFromhEig(retAll)
+    EMax=np.max(EVecTmp)
+    EMin=np.min(EVecTmp)
+    print("Emin="+str(EMin))
+    print("mu="+str(muCurr))
+    print("EMax="+str(EMax))
     tOneMCStepEnd=datetime.now()
     print("one step MC :",tOneMCStepEnd-tOneMCStepStart)
     tau+=1
@@ -370,7 +378,7 @@ record.TEq=TEq
 
 tSampleStart=datetime.now()
 #sampling after equilibrium
-for tau in range(TEq,TEq+1000):#blkNum*blkSize):
+for tau in range(TEq,TEq+blkNum*blkSize):
     print("step " + str(tau))
     tOneMCStepStart = datetime.now()
     # flip s
@@ -411,6 +419,12 @@ for tau in range(TEq,TEq+1000):#blkNum*blkSize):
     record.EAvgAll.append(EAvgCurr)
     record.data.append(deepcopy(retAll))
     record.chemPotAll.append(muCurr)
+    EVecTmp = combineRetFromhEig(retAll)
+    EMax = np.max(EVecTmp)
+    EMin = np.min(EVecTmp)
+    print("Emin=" + str(EMin))
+    print("mu=" + str(muCurr))
+    print("EMax=" + str(EMax))
     tOneMCStepEnd = datetime.now()
     print("one step MC :", tOneMCStepEnd - tOneMCStepStart)
     print("=====================================")
