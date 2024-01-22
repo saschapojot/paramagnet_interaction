@@ -26,7 +26,7 @@ t=0.4
 J=2.5
 g=-0.05
 KSupValsAll=[2*np.pi*j/(L*M) for j in range(0,M)]
-beta=0.01
+beta=0.001
 procNum=48
 #construct h(K,s)
 # hPart=lil_matrix((2 * L, 2 * L), dtype=complex)
