@@ -290,7 +290,7 @@ def autc(sAll):
 
 
 active=True
-maxEquilbrationStep=1000
+maxEquilbrationStep=10000
 
 toEquilibriumCounter=0
 tau=0
@@ -366,7 +366,7 @@ record.TEq=TEq
 
 tSampleStart=datetime.now()
 #sampling after equilibrium
-for tau in range(TEq,TEq+1000):#blkNum*blkSize):
+for tau in range(TEq,TEq+blkNum*blkSize):
     print("step " + str(tau))
     tOneMCStepStart = datetime.now()
     # flip s
