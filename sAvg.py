@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 blkSize=100
 blkNum=50
 
-beta=100
+beta=0.001
 class computationData:#holding computational results to be dumped using pickle
     def __init__(self):
         # self.T=TEst
@@ -23,6 +23,7 @@ class computationData:#holding computational results to be dumped using pickle
         self.data=[]
         self.sAll=[]
         self.EAvgAll=[]
+        self.chemPotAll = []
         self.TEq=1000
         self.equilibrium=False
 
@@ -42,18 +43,17 @@ print("loading time: ",tLoadEnd-tLoadStart)
 
 tMeanStart=datetime.now()
 
-sMeanAll=[]
-for i in range(0,len(record.sAll)):
-    sMeanAll.append(np.mean(record.sAll[i]))
+sLast=record.sAll[-5000::30]
+sMean=np.mean(sLast,axis=0)
 
 tMeanEnd=datetime.now()
 
 print("avg time: ",tMeanEnd-tMeanStart)
-
-plt.figure()
-plt.plot(sMeanAll,color="black")
-plt.xlabel("step")
-plt.ylabel("$<s>$")
-
-plt.savefig(inFilePrefix+"Avgs.png")
-print(sMeanAll[-50:])
+print("s mean = "+str(sMean))
+# plt.figure()
+# plt.plot(sMeanAll,color="black")
+# plt.xlabel("step")
+# plt.ylabel("$<s>$")
+#
+# plt.savefig(inFilePrefix+"Avgs.png")
+# print(sMeanAll[-50:])

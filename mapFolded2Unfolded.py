@@ -150,7 +150,7 @@ class mapperUnfolding():
 blkSize=100
 blkNum=50
 
-beta=10
+beta=100
 
 class computationData:#holding computational results to be dumped using pickle
     def __init__(self):
@@ -190,8 +190,8 @@ for n in range(0,NPrim):
     oneRow=[n,vals,vecs]
     retEigPrimSortedAll.append(oneRow)
 
-dataLast=record.data[-500::10]
-chemPotLast=record.chemPotAll[-5000::50]
+dataLast=record.data[-5000::30]
+# chemPotLast=record.chemPotAll[-5000::50]
 EMatsAll=[]
 cMatsAll=[]
 
@@ -207,7 +207,7 @@ for oneRet in dataLast:
 
 Num=len(dataLast)
 EMatAvg=np.zeros(EMatsAll[0].shape)
-print(len(EMatAvg))
+# print(len(EMatAvg))
 cMatAvg=np.zeros(cMatsAll[0].shape)
 for EMat in EMatsAll:
     EMatAvg+=EMat
@@ -224,9 +224,9 @@ for j in range(0,len(EMatAvg)):
     plt.scatter(kPrimIndsAll,EMatAvg[j,:],s=cMatAvg[j,:],color="red")
 plt.xlabel("$k/\pi$")
 plt.ylabel("$E$")
-muAvg=np.mean(chemPotLast)
-# print(chemPotLast)
-plt.hlines(y=muAvg, xmin=kPrimIndsAll[0], xmax=kPrimIndsAll[-1], colors='blue', linestyles='-', lw=2, label='average chemical potential')
+# muAvg=np.mean(chemPotLast)
+# # print(chemPotLast)
+# plt.hlines(y=muAvg, xmin=kPrimIndsAll[0], xmax=kPrimIndsAll[-1], colors='blue', linestyles='-', lw=2, label='average chemical potential')
 plt.title("$\\beta=$"+str(beta)+", $t=$"+str(t)+", $J=$"+str(J)+", $g=$"+str(g))
 plt.savefig("beta"+str(beta)+"t"+str(t)+"J"+str(J)+"g"+str(g)+".png")
 
