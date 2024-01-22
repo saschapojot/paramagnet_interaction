@@ -150,7 +150,9 @@ class mapperUnfolding():
 blkSize=100
 blkNum=50
 
-beta=0.001
+
+beta=100
+
 
 class computationData:#holding computational results to be dumped using pickle
     def __init__(self):
@@ -190,8 +192,8 @@ for n in range(0,NPrim):
     oneRow=[n,vals,vecs]
     retEigPrimSortedAll.append(oneRow)
 
-dataLast=record.data[-500::10]
-chemPotLast=record.chemPotAll[-5000::50]
+dataLast=record.data[-5000::30]
+# chemPotLast=record.chemPotAll[-5000::50]
 EMatsAll=[]
 cMatsAll=[]
 
@@ -207,7 +209,7 @@ for oneRet in dataLast:
 
 Num=len(dataLast)
 EMatAvg=np.zeros(EMatsAll[0].shape)
-print(len(EMatAvg))
+# print(len(EMatAvg))
 cMatAvg=np.zeros(cMatsAll[0].shape)
 for EMat in EMatsAll:
     EMatAvg+=EMat
