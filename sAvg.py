@@ -28,12 +28,12 @@ class computationData:#holding computational results to be dumped using pickle
         self.equilibrium=False
 
 
-TemperaturesAll=[0.1,1,10,100]
+TemperaturesAll=[0.1+10*n for n in range(0,51)]
 
 t=0.4
 J=-2.5
 g=0.05
-
+tPltStart=datetime.now()
 sAvgAll=[]
 for i in range(0,len(TemperaturesAll)):
     T=TemperaturesAll[i]
@@ -44,7 +44,7 @@ for i in range(0,len(TemperaturesAll)):
     tLoadEnd = datetime.now()
     print("finished loading "+str(i))
     print("loading time: ", tLoadEnd - tLoadStart)
-    sLast=record.sAll[-500::10]
+    sLast=record.sAll[-5000::30]
     supcellMean=np.abs(np.mean(sLast,axis=1))
     sAvgAll.append(np.mean(supcellMean))
 
@@ -54,5 +54,11 @@ fig=plt.figure()
 ax = fig.add_subplot(1, 1, 1)
 
 ax.plot(TemperaturesAll,sAvgAll)
-ax.set_xscale("log")
+
+ax.set_xlabel("$T$")
+ax.set_ylabel("$<s>$")
 plt.savefig("sAvg.png")
+plt.close()
+tPltEnd=datetime.now()
+
+print("plot time: ",tPltEnd-tPltStart)
