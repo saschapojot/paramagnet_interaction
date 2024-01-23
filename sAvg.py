@@ -14,7 +14,6 @@ import matplotlib.pyplot as plt
 blkSize=100
 blkNum=50
 
-beta=0.001
 class computationData:#holding computational results to be dumped using pickle
     def __init__(self):
         # self.T=TEst
@@ -30,30 +29,36 @@ class computationData:#holding computational results to be dumped using pickle
 
 tLoadStart=datetime.now()
 
+TAll=[0.01,0.1,1,10,100]
 t=0.4
-J=2.5
-g=-0.05
-inFilePrefix="beta"+str(beta)+"t"+str(t)+"J"+str(J)+"g"+str(g)
-inPklFile=inFilePrefix+"out.pkl"
+J=-2.5
+g=0.05
+sAvg=[]
+for T in TAll:
+    inFilePrefix = "T" + str(T) + "t" + str(t) + "J" + str(J) + "g" + str(g)
+    inPklFile = inFilePrefix + "out.pkl"
+    tLoadStart = datetime.now()
+    with open(inPklFile, "rb") as fptr:
+        record = pickle.load(fptr)
+    tLoadEnd = datetime.now()
+    print("loading time: ", tLoadEnd - tLoadStart)
+    sLast = record.sAll[-5000::30]
+    # sAbs=np.abs(sLast)
+    smTmp=np.mean(sLast,axis=1)
+    # print(len(smTmp))
+    sVal=np.mean(np.abs(smTmp))
+    sAvg.append(sVal)
 
-with open(inPklFile,"rb") as fptr:
-    record=pickle.load(fptr)
-tLoadEnd=datetime.now()
-print("loading time: ",tLoadEnd-tLoadStart)
 
-tMeanStart=datetime.now()
 
-sLast=record.sAll[-5000::30]
-sMean=np.mean(sLast,axis=0)
 
-tMeanEnd=datetime.now()
+print(sAvg)
 
-print("avg time: ",tMeanEnd-tMeanStart)
-print("s mean = "+str(sMean))
-# plt.figure()
-# plt.plot(sMeanAll,color="black")
-# plt.xlabel("step")
-# plt.ylabel("$<s>$")
-#
-# plt.savefig(inFilePrefix+"Avgs.png")
-# print(sMeanAll[-50:])
+fig=plt.figure()
+ax = fig.add_subplot(2, 1, 1)
+plt.plot(TAll,sAvg)
+plt.xlabel("$T$")
+plt.ylabel("spin")
+plt.xticks(TAll)
+ax.set_xscale('log')
+plt.savefig("sAvg.png")

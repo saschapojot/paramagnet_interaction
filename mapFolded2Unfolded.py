@@ -150,7 +150,7 @@ class mapperUnfolding():
 blkSize=100
 blkNum=50
 
-beta=100
+
 
 class computationData:#holding computational results to be dumped using pickle
     def __init__(self):
@@ -168,9 +168,10 @@ tLoadStart=datetime.now()
 L=10
 M=20
 t=0.4
-J=2.5
-g=-0.05
-inPklFile="beta"+str(beta)+"t"+str(t)+"J"+str(J)+"g"+str(g)+"out.pkl"
+J=-2.5
+g=0.05
+T=100
+inPklFile="T"+str(T)+"t"+str(t)+"J"+str(J)+"g"+str(g)+"out.pkl"
 
 with open(inPklFile,"rb") as fptr:
     record=pickle.load(fptr)
@@ -227,8 +228,8 @@ plt.ylabel("$E$")
 # muAvg=np.mean(chemPotLast)
 # # print(chemPotLast)
 # plt.hlines(y=muAvg, xmin=kPrimIndsAll[0], xmax=kPrimIndsAll[-1], colors='blue', linestyles='-', lw=2, label='average chemical potential')
-plt.title("$\\beta=$"+str(beta)+", $t=$"+str(t)+", $J=$"+str(J)+", $g=$"+str(g))
-plt.savefig("beta"+str(beta)+"t"+str(t)+"J"+str(J)+"g"+str(g)+".png")
+plt.title("$T=$"+str(T)+", $t=$"+str(t)+", $J=$"+str(J)+", $g=$"+str(g))
+plt.savefig("T"+str(T)+"t"+str(t)+"J"+str(J)+"g"+str(g)+".png")
 
 # mapper=mapperUnfolding(retEigPrimSortedAll,record.data[45])
 # mapper.mapping()
