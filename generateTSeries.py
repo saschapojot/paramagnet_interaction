@@ -4,8 +4,8 @@ import re
 
 lagFileName="computeEigLag"
 suffix=".py"
-
-TemperaturesAll=[0.1,1,10,100]
+part=1
+TemperaturesAll=[range(0,11)]
 
 fileIn=open(lagFileName+suffix,"r")
 
@@ -19,7 +19,7 @@ for l in range(0,len(contents)):
 counter=0
 for TVal in TemperaturesAll:
     contents[lineNum]="T="+str(TVal)+"\n"
-    outFileName="computeEigLag"+str(counter)+".py"
+    outFileName="computeEigLag"+str(counter)+"part"+str(part)+".py"
     fileOut=open(outFileName,"w+")
     for oneline in contents:
         fileOut.write(oneline)
@@ -43,7 +43,7 @@ for i in range(0,len(TemperaturesAll)):
     bashContents.append("#SBATCH -o outlag" + str(i) + ".o\n")
     bashContents.append("#SBATCH -e outlag" + str(i) + ".e\n")
     bashContents.append("cd /home/cywanag/liuxi/Documents/pyCode/paramagnet_interaction\n")
-    bashContents.append("python3 computeEigLag"+str(i)+".py > rec"+str(i)+".txt\n")
+    bashContents.append("python3 computeEigLag"+str(i)+"part"+str(part)+".py > rec"+str(i)+".txt\n")
     bsFileName="lag"+str(i)+".sh"
     fbsTmp=open(bsFileName,"w+")
     for oneline in bashContents:
