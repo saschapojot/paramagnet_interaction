@@ -28,7 +28,7 @@ g=0.05
 KSupValsAll=[2*np.pi*j/(L*M) for j in range(0,M)]
 
 T=0.01
-
+beta=1/T
 
 
 
@@ -305,7 +305,7 @@ tEqStart=datetime.now()
 flipNum=0
 notFlipNum=0
 print("T="+str(T))
-beta=1/T
+
 #to reach equilibrium of MCMC
 while active:
     print("step "+str(tau))
@@ -453,43 +453,3 @@ print("no flip num: "+str(notFlipNum))
 outPklFileName="T"+str(T)+"t"+str(t)+"J"+str(J)+"g"+str(g)+"out.pkl"
 with open(outPklFileName,"wb") as fptr:
     pickle.dump(record,fptr, pickle.HIGHEST_PROTOCOL)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
