@@ -5,7 +5,8 @@ import re
 lagFileName="computeEigLag"
 suffix=".py"
 
-TemperaturesAll=[0.1,1,10,100]
+
+TemperaturesAll=[0.1+10*n for n in range(0,51)]
 
 fileIn=open(lagFileName+suffix,"r")
 

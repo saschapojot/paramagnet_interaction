@@ -57,7 +57,8 @@ ax.plot(TemperaturesAll,sAvgAll)
 
 ax.set_xlabel("$T$")
 ax.set_ylabel("$<s>$")
-plt.savefig("sAvg.png")
+ax.set_xscale('log')
+plt.savefig("sAvglogx.png")
 plt.close()
 tPltEnd=datetime.now()
 

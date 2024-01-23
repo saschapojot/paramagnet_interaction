@@ -151,7 +151,7 @@ blkSize=100
 blkNum=50
 
 
-beta=100
+# beta=100
 
 
 class computationData:#holding computational results to be dumped using pickle
