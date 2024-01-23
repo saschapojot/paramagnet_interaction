@@ -15,7 +15,9 @@ import statsmodels.api as sm
 #this script computes the eigenvalue problem of each element in the Markov chain
 #for 1 set of [L,M,J,t,g] parameters
 
-random.seed(9)
+
+random.seed(100)
+
 L=10
 M=20
 
@@ -27,9 +29,13 @@ J=-2.5
 g=0.05
 KSupValsAll=[2*np.pi*j/(L*M) for j in range(0,M)]
 
-
-T=100
+T=0.01
 beta=1/T
+
+
+
+
+
 
 procNum=48
 #construct h(K,s)
@@ -304,6 +310,7 @@ tEqStart=datetime.now()
 flipNum=0
 notFlipNum=0
 print("T="+str(T))
+
 #to reach equilibrium of MCMC
 while active:
     print("step "+str(tau))
@@ -451,43 +458,3 @@ print("no flip num: "+str(notFlipNum))
 outPklFileName="T"+str(T)+"t"+str(t)+"J"+str(J)+"g"+str(g)+"out.pkl"
 with open(outPklFileName,"wb") as fptr:
     pickle.dump(record,fptr, pickle.HIGHEST_PROTOCOL)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

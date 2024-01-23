@@ -28,38 +28,68 @@ class computationData:#holding computational results to be dumped using pickle
         self.equilibrium=False
 
 
-TemperaturesAll=[0.1+10*n for n in range(0,51)]
+TemperaturesAll=[0.1,0.2,0.3,0.4]+[0.5+n*0.5 for n in range(0,43)]
+
 
 t=0.4
 J=-2.5
 g=0.05
+part=2
+sAvg=[]
 tPltStart=datetime.now()
-sAvgAll=[]
-for i in range(0,len(TemperaturesAll)):
-    T=TemperaturesAll[i]
-    inFileName="T"+str(T)+"t"+str(t)+"J"+str(J)+"g"+str(g)+"out.pkl"
+for T in TemperaturesAll:
+    inFilePrefix = "T" + str(T) + "t" + str(t) + "J" + str(J) + "g" + str(g)
+    inPklFile = inFilePrefix +"part"+str(part)+ "out.pkl"
     tLoadStart = datetime.now()
-    with open(inFileName,"rb") as fptr:
-        record=pickle.load(fptr)
+    with open(inPklFile, "rb") as fptr:
+        record = pickle.load(fptr)
     tLoadEnd = datetime.now()
-    print("finished loading "+str(i))
     print("loading time: ", tLoadEnd - tLoadStart)
-    sLast=record.sAll[-5000::30]
-    supcellMean=np.abs(np.mean(sLast,axis=1))
-    sAvgAll.append(np.mean(supcellMean))
+    sLast = record.sAll[-1000::10]
+    # sAbs=np.abs(sLast)
+    smTmp=np.mean(sLast,axis=1)
+    # print(len(smTmp))
+    sVal=np.mean(np.abs(smTmp))
+    sAvg.append(sVal)
 
 
-fig=plt.figure()
+phTransTemp=3
+indTr=TemperaturesAll.index(phTransTemp)
+sPhTr=sAvg[indTr]
 
-ax = fig.add_subplot(1, 1, 1)
+tempPrev=2
+indPrev=TemperaturesAll.index(tempPrev)
+sPrev=sAvg[indPrev]
 
-ax.plot(TemperaturesAll,sAvgAll)
+fig,ax=plt.subplots()
+
+ax.plot(TemperaturesAll,sAvg,color="black")
+plt.xlabel("$T$")
+plt.ylabel("<s>")
+plt.title("Temperature from "+str(TemperaturesAll[0])+" to "+str(TemperaturesAll[-1]))
+# Move left and bottom spines to zero
+ax.spines['left'].set_position('zero')
+ax.spines['bottom'].set_position('zero')
+
+# Hide top and right spines
+ax.spines['right'].set_color('none')
+ax.spines['top'].set_color('none')
+plt.vlines(x=phTransTemp,ymin=0,ymax=sPhTr,ls='--',color="red")
+plt.hlines(y=sPhTr,xmin=0,xmax=phTransTemp,ls="--",color="red")
+plt.vlines(x=tempPrev,ymin=0,ymax=sPrev,ls="--",color="blue")
+plt.hlines(y=sPrev,xmin=0,xmax=tempPrev,ls="--",color="blue")
+xTicks=[2.5,1,3]
+plt.xticks(xTicks)
+plt.yticks([0,0.2,0.4,0.6,sPhTr,0.8,1])
+plt.savefig("T"+str(TemperaturesAll[0])+"toT"+str(TemperaturesAll[-1])+"sAvg.png")
+
+
 
 ax.set_xlabel("$T$")
 ax.set_ylabel("$<s>$")
 ax.set_xscale('log')
 plt.savefig("sAvglogx.png")
 plt.close()
-tPltEnd=datetime.now()
 
-print("plot time: ",tPltEnd-tPltStart)
+tPltEnd=datetime.now()
+print("time: ",tPltEnd-tPltStart)
