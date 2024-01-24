@@ -210,19 +210,19 @@ def combineRetFromhEig(retAll):
 # TEst=1000#equilibration time estimated
 
 #TODO: estimate a more accurate value of TEst using time series
-blkSize=100
-blkNum=50
+# blkSize=100
+# blkNum=50
 
 class computationData:#holding computational results to be dumped using pickle
     def __init__(self):
         # self.T=TEst
-        self.blkSize=blkSize
-        self.blkNum=blkNum
+        # self.blkSize=blkSize
+        # self.blkNum=blkNum
         self.data=[]
         self.sAll=[]
         self.EAvgAll=[]
         self.chemPotAll=[]
-        self.TEq=1000
+        self.loop=1000
         self.equilibrium=False
 
 # def flipInd(i):
@@ -302,7 +302,7 @@ def autc(sAll):
 
 
 active=True
-maxEquilbrationStep=10000
+maxEquilbrationStep=50000
 
 toEquilibriumCounter=0
 tau=0
@@ -370,12 +370,13 @@ while active:
     # print("EMax="+str(EMax))
     tOneMCStepEnd=datetime.now()
     print("one step MC :",tOneMCStepEnd-tOneMCStepStart)
-    tau+=1
+
     print("=====================================")
 
     if tau%500==0:
         print("flip "+str(tau))
     toEquilibriumCounter+=1
+    tau += 1
     if toEquilibriumCounter>maxEquilbrationStep:
         break
     # if tau>=5000 and  tau%1000==0:
@@ -386,68 +387,69 @@ while active:
 
 tEqEnd=datetime.now()
 print("equilibrium time: ",tEqEnd-tEqStart)
-TEq=tau-1
-record.TEq=TEq
+loop=tau-1
+record.loop=loop
 
-tSampleStart=datetime.now()
-#sampling after equilibrium
-for tau in range(TEq,TEq+blkNum*blkSize):
-    print("step " + str(tau))
-    tOneMCStepStart = datetime.now()
-    # flip s
-    if tau%500==0:
-        print("flip "+str(tau))
-    sNext = deepcopy(sCurr)
-    flipIndVal = random.randint(0, L - 1)
-    sNext[flipIndVal] *= -1
-    retAllNext = s2EigSerial(sNext)
-    EVecNext = combineRetFromhEig(retAllNext)
-    EAvgNext,muNext = avgEnergy(EVecNext)
-    DeltaE = (EAvgNext - EAvgCurr)/M
-    print("Delta E=" + str(DeltaE))
-    if DeltaE <= 0:
-        sCurr = deepcopy(sNext)
-        retAll = deepcopy(retAllNext)
-        EAvgCurr = EAvgNext
-        muCurr=muNext
-        print("flipped")
-        flipNum+=1
-    else:
-        r = random.random()
+# remainingSteps=blkNum*blkSize
+# # tSampleStart=datetime.now()
+# #sampling after equilibrium
+# for tau in range(TEq,TEq+remainingSteps):
+#     print("step " + str(tau))
+#     tOneMCStepStart = datetime.now()
+#     # flip s
+#     if tau%500==0:
+#         print("flip "+str(tau))
+#     sNext = deepcopy(sCurr)
+#     flipIndVal = random.randint(0, L - 1)
+#     sNext[flipIndVal] *= -1
+#     retAllNext = s2EigSerial(sNext)
+#     EVecNext = combineRetFromhEig(retAllNext)
+#     EAvgNext,muNext = avgEnergy(EVecNext)
+#     DeltaE = (EAvgNext - EAvgCurr)/M
+#     print("Delta E=" + str(DeltaE))
+#     if DeltaE <= 0:
+#         sCurr = deepcopy(sNext)
+#         retAll = deepcopy(retAllNext)
+#         EAvgCurr = EAvgNext
+#         muCurr=muNext
+#         print("flipped")
+#         flipNum+=1
+#     else:
+#         r = random.random()
+#
+#         print("r=" + str(r))
+#         print("exp(-beta*Delta E)=" + str(np.exp(-beta * DeltaE)))
+#         if r < np.exp(-beta * DeltaE):
+#             sCurr = deepcopy(sNext)
+#             retAll = deepcopy(retAllNext)
+#             EAvgCurr = EAvgNext
+#             muCurr = muNext
+#             print("flipped")
+#             flipNum+=1
+#         else:
+#             print("not flipped")
+#             notFlipNum+=1
+#
+#     record.sAll.append(deepcopy(sCurr))
+#     record.EAvgAll.append(EAvgCurr)
+#     record.data.append(deepcopy(retAll))
+#     record.chemPotAll.append(muCurr)
+#     # EVecTmp = combineRetFromhEig(retAll)
+#     # EMax = np.max(EVecTmp)
+#     # EMin = np.min(EVecTmp)
+#     # print("Emin=" + str(EMin))
+#     # print("mu=" + str(muCurr))
+#     # print("EMax=" + str(EMax))
+#     print("sCurr=" + str(sCurr))
+#     tOneMCStepEnd = datetime.now()
+#     print("one step MC :", tOneMCStepEnd - tOneMCStepStart)
+#     print("=====================================")
 
-        print("r=" + str(r))
-        print("exp(-beta*Delta E)=" + str(np.exp(-beta * DeltaE)))
-        if r < np.exp(-beta * DeltaE):
-            sCurr = deepcopy(sNext)
-            retAll = deepcopy(retAllNext)
-            EAvgCurr = EAvgNext
-            muCurr = muNext
-            print("flipped")
-            flipNum+=1
-        else:
-            print("not flipped")
-            notFlipNum+=1
-
-    record.sAll.append(deepcopy(sCurr))
-    record.EAvgAll.append(EAvgCurr)
-    record.data.append(deepcopy(retAll))
-    record.chemPotAll.append(muCurr)
-    # EVecTmp = combineRetFromhEig(retAll)
-    # EMax = np.max(EVecTmp)
-    # EMin = np.min(EVecTmp)
-    # print("Emin=" + str(EMin))
-    # print("mu=" + str(muCurr))
-    # print("EMax=" + str(EMax))
-    print("sCurr=" + str(sCurr))
-    tOneMCStepEnd = datetime.now()
-    print("one step MC :", tOneMCStepEnd - tOneMCStepStart)
-    print("=====================================")
 
 
+# tSampleEnd=datetime.now()
 
-tSampleEnd=datetime.now()
-
-print("Sampling time: ",tSampleEnd-tSampleStart)
+# print("Sampling time: ",tSampleEnd-tSampleStart)
 
 
 
@@ -455,6 +457,6 @@ tMCEnd=datetime.now()
 print("MC time: ", tMCEnd-tMCStart)
 print("flip num: "+str(flipNum))
 print("no flip num: "+str(notFlipNum))
-outPklFileName="T"+str(T)+"t"+str(t)+"J"+str(J)+"g"+str(g)+"out.pkl"
+outPklFileName="T"+str(T)+"t"+str(t)+"J"+str(J)+"g"+str(g)+"step"+str(maxEquilbrationStep+remainingSteps)+"out.pkl"
 with open(outPklFileName,"wb") as fptr:
     pickle.dump(record,fptr, pickle.HIGHEST_PROTOCOL)
