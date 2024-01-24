@@ -55,6 +55,7 @@ for TVal in TemperaturesAll:
         bashContents.append("#!/bin/bash\n")
         bashContents.append("#SBATCH -n 12\n")
         bashContents.append("#SBATCH -N 1\n")
+        bashContents.append("#SBATCH -t 0-40:00\n")
         bashContents.append("#SBATCH -p CLUSTER\n")
         bashContents.append("#SBATCH --mem=40GB\n")
         bashContents.append("#SBATCH -o outlag" + str(counter) + ".o\n")
