@@ -11,20 +11,20 @@ import matplotlib.pyplot as plt
 # from scipy.linalg import eigh
 
 #This script computes avgerage value of s over MC steps
-blkSize=100
-blkNum=50
+# blkSize=100
+# blkNum=50
 
 
 class computationData:#holding computational results to be dumped using pickle
     def __init__(self):
         # self.T=TEst
-        self.blkSize=blkSize
-        self.blkNum=blkNum
+        # self.blkSize=blkSize
+        # self.blkNum=blkNum
         self.data=[]
         self.sAll=[]
         self.EAvgAll=[]
         self.chemPotAll = []
-        self.TEq=1000
+        self.loop=1000
         self.equilibrium=False
 
 
@@ -53,11 +53,11 @@ for T in TemperaturesAll:
     sAvg.append(sVal)
 
 
-phTransTemp=3
+phTransTemp=2
 indTr=TemperaturesAll.index(phTransTemp)
 sPhTr=sAvg[indTr]
 
-tempPrev=2
+tempPrev=1.5
 indPrev=TemperaturesAll.index(tempPrev)
 sPrev=sAvg[indPrev]
 
@@ -78,9 +78,10 @@ plt.vlines(x=phTransTemp,ymin=0,ymax=sPhTr,ls='--',color="red")
 plt.hlines(y=sPhTr,xmin=0,xmax=phTransTemp,ls="--",color="red")
 plt.vlines(x=tempPrev,ymin=0,ymax=sPrev,ls="--",color="blue")
 plt.hlines(y=sPrev,xmin=0,xmax=tempPrev,ls="--",color="blue")
-xTicks=[2.5,1,3]
+xTicks=[tempPrev,phTransTemp]
+ax.tick_params(axis='both', which='major', labelsize=6)
 plt.xticks(xTicks)
-plt.yticks([0,0.2,0.4,0.6,sPhTr,0.8,1])
+plt.yticks([0,0.2,0.4,sPhTr,0.8,1])
 plt.savefig("T"+str(TemperaturesAll[0])+"toT"+str(TemperaturesAll[-1])+"sAvg.png")
 
 
