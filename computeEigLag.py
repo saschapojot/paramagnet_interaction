@@ -297,7 +297,7 @@ def autc(sAll):
 
 
 active=True
-maxEquilbrationStep=10000
+maxEquilbrationStep=40000
 
 toEquilibriumCounter=0
 tau=0
@@ -384,9 +384,10 @@ print("equilibrium time: ",tEqEnd-tEqStart)
 TEq=tau-1
 record.TEq=TEq
 
-tSampleStart=datetime.now()
+remainingSteps=blkNum*blkSize
+# tSampleStart=datetime.now()
 #sampling after equilibrium
-for tau in range(TEq,TEq+blkNum*blkSize):
+for tau in range(TEq,TEq+remainingSteps):
     print("step " + str(tau))
     tOneMCStepStart = datetime.now()
     # flip s
@@ -440,9 +441,9 @@ for tau in range(TEq,TEq+blkNum*blkSize):
 
 
 
-tSampleEnd=datetime.now()
+# tSampleEnd=datetime.now()
 
-print("Sampling time: ",tSampleEnd-tSampleStart)
+# print("Sampling time: ",tSampleEnd-tSampleStart)
 
 
 
@@ -450,6 +451,6 @@ tMCEnd=datetime.now()
 print("MC time: ", tMCEnd-tMCStart)
 print("flip num: "+str(flipNum))
 print("no flip num: "+str(notFlipNum))
-outPklFileName="T"+str(T)+"t"+str(t)+"J"+str(J)+"g"+str(g)+"out.pkl"
+outPklFileName="T"+str(T)+"t"+str(t)+"J"+str(J)+"g"+str(g)+"step"+str(maxEquilbrationStep+remainingSteps)+"out.pkl"
 with open(outPklFileName,"wb") as fptr:
     pickle.dump(record,fptr, pickle.HIGHEST_PROTOCOL)
