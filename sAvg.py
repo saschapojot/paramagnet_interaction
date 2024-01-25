@@ -28,13 +28,14 @@ class computationData:#holding computational results to be dumped using pickle
         self.equilibrium=False
 
 
-TemperaturesAll=[0.1,0.2,0.3,0.4]+[0.5+n*0.5 for n in range(0,43)]
+TemperaturesAll=[1.7]
+randSeedAll=[10,38,999,756,10992]
 
 
 t=0.4
 J=-2.5
 g=0.05
-part=2
+part=4
 sAvg=[]
 tPltStart=datetime.now()
 for T in TemperaturesAll:

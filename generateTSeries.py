@@ -38,6 +38,8 @@ for TVal in TemperaturesAll:
     for rs in randSeedAll:
         contents[lineTemperature]="T="+str(TVal)+"\n"
         contents[lineRandSeed]="random.seed("+str(rs)+")\n"
+        contents[-3] = 'outPklFileName="T"+str(T)+"t"+str(t)+"J"+str(J)+"g"+str(g)'+'+"randseed"+str('+str(rs)+')+"part"+str(' + str(
+            part) + ')+"out.pkl"\n'
         outFileName = "computeEigLag" + str(counter) + "part" + str(part)+"randseed"+str(rs) + ".py"
         fileOut = open(outFileName, "w+")
         for oneline in contents:

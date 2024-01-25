@@ -452,6 +452,6 @@ tMCEnd=datetime.now()
 print("MC time: ", tMCEnd-tMCStart)
 print("flip num: "+str(flipNum))
 print("no flip num: "+str(notFlipNum))
-outPklFileName="T"+str(T)+"t"+str(t)+"J"+str(J)+"g"+str(g)+"step"+str(maxEquilbrationStep+remainingSteps)+"out.pkl"
+outPklFileName="T"+str(T)+"t"+str(t)+"J"+str(J)+"g"+str(g)+"step"+str(maxEquilbrationStep)+"out.pkl"
 with open(outPklFileName,"wb") as fptr:
     pickle.dump(record,fptr, pickle.HIGHEST_PROTOCOL)
