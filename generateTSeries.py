@@ -15,7 +15,8 @@ fileIn=open(lagFileName+suffix,"r")
 contents=fileIn.readlines()
 lineTemperature=0#the line corresponding to T=xxxxx (temperature)
 lineRandSeed=0# random seed
-lineMaxEq=0# loop numbers in first mc
+lineMaxStep=0# loop numbers in first mc
+
 for l in range(0,len(contents)):
     line=contents[l]
     if re.findall("^T=\d+",line):
@@ -24,8 +25,10 @@ for l in range(0,len(contents)):
     if re.findall("^random\.seed",line):
         lineRandSeed=l
         # print(lineRandSeed)
-    if re.findall("^maxEquilbrationStep=",line):
-        lineMaxEq=l
+    if re.findall("^maxEquilbrationStep=\d+",line):
+        lineMaxStep=l
+
+
         # print(lineMaxEq)
 
 
@@ -35,12 +38,15 @@ for l in range(0,len(contents)):
 # contents[-3]='outPklFileName="T"+str(T)+"t"+str(t)+"J"+str(J)+"g"+str(g)+"part"+str('+str(part)+')+"out.pkl"\n'
 #
 #
+maxStepMatch=re.search("\d+",contents[lineMaxStep])
+if maxStepMatch:
+    maxStep=maxStepMatch.group()
 counter=0
 for TVal in TemperaturesAll:
     for rs in randSeedAll:
         contents[lineTemperature]="T="+str(TVal)+"\n"
         contents[lineRandSeed]="random.seed("+str(rs)+")\n"
-        contents[-3] = 'outPklFileName="T"+str(T)+"t"+str(t)+"J"+str(J)+"g"+str(g)'+'+"randseed"+str('+str(rs)+')+"part"+str(' + str(
+        contents[-3] = 'outPklFileName="T"+str(T)+"t"+str(t)+"J"+str(J)+"g"+str(g)'+'+"randseed"+str('+str(rs)+')+"step"+str('+str(maxStep)+')+"part"+str(' + str(
             part) + ')+"out.pkl"\n'
         outFileName = "computeEigLag" + str(counter) + "part" + str(part)+"randseed"+str(rs) + ".py"
         fileOut = open(outFileName, "w+")

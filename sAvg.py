@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 # from scipy.linalg import eigh
 
 #This script computes avgerage value of s over MC steps
+#This script computes magnetic susceptibility  over MC steps
 # blkSize=100
 # blkNum=50
 
@@ -38,12 +39,14 @@ t=0.4
 J=-2.5
 g=0.05
 
-part=4
+part=3
 
 sAvg=[]
+chiValAll=[]
 tPltStart=datetime.now()
+inDir="./part"+str(part)+"/"
 for T in TemperaturesAll:
-    inFilePrefix = "T" + str(T) + "t" + str(t) + "J" + str(J) + "g" + str(g)
+    inFilePrefix =inDir+"T" + str(T) + "t" + str(t) + "J" + str(J) + "g" + str(g)
     inPklFile = inFilePrefix +"part"+str(part)+ "out.pkl"
     tLoadStart = datetime.now()
     with open(inPklFile, "rb") as fptr:
@@ -52,10 +55,18 @@ for T in TemperaturesAll:
     print("loading time: ", tLoadEnd - tLoadStart)
     sLast = record.sAll[-1000::10]
     # sAbs=np.abs(sLast)
-    smTmp=np.mean(sLast,axis=1)
+    smTmp=np.mean(sLast,axis=1)#mean spin for each configuration
     # print(len(smTmp))
     sVal=np.mean(np.abs(smTmp))
     sAvg.append(sVal)
+
+    ##average of spin over configurations
+    meanS=np.mean(smTmp)
+    #square of avg spin for one configuration
+    sSquared=smTmp**2
+    meanS2=np.mean((sSquared))
+    chiTmp=(meanS2-meanS**2)/T
+    chiValAll.append(chiTmp)
 
 
 
@@ -95,15 +106,25 @@ ax.tick_params(axis='both', which='major', labelsize=6)
 plt.xticks(xTicks)
 
 
-plt.savefig("T"+str(TemperaturesAll[0])+"toT"+str(TemperaturesAll[-1])+"sAvg.png")
+plt.savefig(inDir+"T"+str(TemperaturesAll[0])+"toT"+str(TemperaturesAll[-1])+"sAvg.png")
 
 
 
-ax.set_xlabel("$T$")
-ax.set_ylabel("$<s>$")
-ax.set_xscale('log')
-plt.savefig("sAvglogx.png")
+
 plt.close()
 
+fig,ax=plt.subplots()
+ax.plot(TemperaturesAll,chiValAll,color="red")
+plt.title("Temperature from "+str(TemperaturesAll[0])+" to "+str(TemperaturesAll[-1]))
+plt.xlabel("$T$")
+plt.ylabel("$\chi$")
+ax.spines['left'].set_position('zero')
+ax.spines['bottom'].set_position('zero')
+
+# Hide top and right spines
+ax.spines['right'].set_color('none')
+ax.spines['top'].set_color('none')
+ax.tick_params(axis='both', which='major', labelsize=6)
+plt.savefig(inDir+"T"+str(TemperaturesAll[0])+"toT"+str(TemperaturesAll[-1])+"Chi.png")
 tPltEnd=datetime.now()
 print("time: ",tPltEnd-tPltStart)
