@@ -28,14 +28,18 @@ class computationData:#holding computational results to be dumped using pickle
         self.equilibrium=False
 
 
+
 TemperaturesAll=[1.7]
 randSeedAll=[10,38,999,756,10992]
+
 
 
 t=0.4
 J=-2.5
 g=0.05
+
 part=4
+
 sAvg=[]
 tPltStart=datetime.now()
 for T in TemperaturesAll:
@@ -54,13 +58,15 @@ for T in TemperaturesAll:
     sAvg.append(sVal)
 
 
-phTransTemp=2
-indTr=TemperaturesAll.index(phTransTemp)
-sPhTr=sAvg[indTr]
 
-tempPrev=1.5
-indPrev=TemperaturesAll.index(tempPrev)
-sPrev=sAvg[indPrev]
+# phTransTemp=3
+# indTr=TemperaturesAll.index(phTransTemp)
+# sPhTr=sAvg[indTr]
+#
+# tempPrev=2
+# indPrev=TemperaturesAll.index(tempPrev)
+# sPrev=sAvg[indPrev]
+
 
 fig,ax=plt.subplots()
 
@@ -75,16 +81,29 @@ ax.spines['bottom'].set_position('zero')
 # Hide top and right spines
 ax.spines['right'].set_color('none')
 ax.spines['top'].set_color('none')
-plt.vlines(x=phTransTemp,ymin=0,ymax=sPhTr,ls='--',color="red")
-plt.hlines(y=sPhTr,xmin=0,xmax=phTransTemp,ls="--",color="red")
-plt.vlines(x=tempPrev,ymin=0,ymax=sPrev,ls="--",color="blue")
-plt.hlines(y=sPrev,xmin=0,xmax=tempPrev,ls="--",color="blue")
-xTicks=[tempPrev,phTransTemp]
+
+# plt.vlines(x=phTransTemp,ymin=0,ymax=sPhTr,ls='--',color="red")
+# plt.hlines(y=sPhTr,xmin=0,xmax=phTransTemp,ls="--",color="red")
+# plt.vlines(x=tempPrev,ymin=0,ymax=sPrev,ls="--",color="blue")
+# plt.hlines(y=sPrev,xmin=0,xmax=tempPrev,ls="--",color="blue")
+xTicks=TemperaturesAll
+
+plt.yticks([0,0.2,0.4,0.6,0.8,1])
+
+
 ax.tick_params(axis='both', which='major', labelsize=6)
 plt.xticks(xTicks)
-plt.yticks([0,0.2,0.4,sPhTr,0.8,1])
+
+
 plt.savefig("T"+str(TemperaturesAll[0])+"toT"+str(TemperaturesAll[-1])+"sAvg.png")
 
+
+
+ax.set_xlabel("$T$")
+ax.set_ylabel("$<s>$")
+ax.set_xscale('log')
+plt.savefig("sAvglogx.png")
+plt.close()
 
 tPltEnd=datetime.now()
 print("time: ",tPltEnd-tPltStart)

@@ -15,7 +15,9 @@ import statsmodels.api as sm
 #this script computes the eigenvalue problem of each element in the Markov chain
 #for 1 set of [L,M,J,t,g] parameters
 
+
 random.seed(100)
+
 L=10
 M=20
 
@@ -29,6 +31,9 @@ KSupValsAll=[2*np.pi*j/(L*M) for j in range(0,M)]
 
 T=0.01
 beta=1/T
+
+
+
 
 
 

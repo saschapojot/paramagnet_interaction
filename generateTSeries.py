@@ -4,9 +4,11 @@ import re
 
 lagFileName="computeEigLag"
 suffix=".py"
+
 part=4
 TemperaturesAll=[1.7]
 randSeedAll=[10,38,999,756,10992]
+
 
 fileIn=open(lagFileName+suffix,"r")
 
@@ -55,6 +57,7 @@ for TVal in TemperaturesAll:
         bashContents.append("#!/bin/bash\n")
         bashContents.append("#SBATCH -n 12\n")
         bashContents.append("#SBATCH -N 1\n")
+        bashContents.append("#SBATCH -t 0-40:00\n")
         bashContents.append("#SBATCH -p CLUSTER\n")
         bashContents.append("#SBATCH --mem=40GB\n")
         bashContents.append("#SBATCH -o outlag" + str(counter) + ".o\n")
