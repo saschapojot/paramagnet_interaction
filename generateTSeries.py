@@ -45,7 +45,7 @@ for l in range(0,len(contents)):
 # maxStepMatch=re.search("\d+",contents[lineMaxStep])
 # if maxStepMatch:
 #     maxStep=maxStepMatch.group()
-setMaxStep=40000
+setMaxStep=50000
 counter=0
 for TVal in TemperaturesAll:
     for rs in randSeedAll:
@@ -81,7 +81,7 @@ for TVal in TemperaturesAll:
         bashContents.append(
             "python3 computeEigLag" + str(counter) + "part" + str(part)+"randseed"+str(rs) + ".py > part" + str(part) + "rec" + str(
                 counter)+"Temp"+str(TVal) + ".txt\n")
-        bsFileName = "lag" + str(counter) + ".sh"
+        bsFileName = "./lagBash/lag" + str(counter) + ".sh"
         fbsTmp = open(bsFileName, "w+")
         for oneline in bashContents:
             fbsTmp.write(oneline)
