@@ -1,13 +1,15 @@
 import numpy as np
 import re
 
+#this script generates MCMC computing scripts as well as bash files for submitting jobs
+
 
 lagFileName="computeEigLag"
 suffix=".py"
 
-part=4
-TemperaturesAll=[1.7]
-randSeedAll=[10,38,999,756,10992]
+part=5
+TemperaturesAll=[0.1+0.05*n  for n in range(0,51)]
+randSeedAll=[433]
 
 
 fileIn=open(lagFileName+suffix,"r")
@@ -16,7 +18,7 @@ contents=fileIn.readlines()
 lineTemperature=0#the line corresponding to T=xxxxx (temperature)
 lineRandSeed=0# random seed
 lineMaxStep=0# loop numbers in first mc
-
+linePart=0
 for l in range(0,len(contents)):
     line=contents[l]
     if re.findall("^T=\d+",line):
@@ -27,6 +29,8 @@ for l in range(0,len(contents)):
         # print(lineRandSeed)
     if re.findall("^maxEquilbrationStep=\d+",line):
         lineMaxStep=l
+    if re.findall("^part=\d+",line):
+        linePart=l
 
 
         # print(lineMaxEq)
@@ -38,15 +42,20 @@ for l in range(0,len(contents)):
 # contents[-3]='outPklFileName="T"+str(T)+"t"+str(t)+"J"+str(J)+"g"+str(g)+"part"+str('+str(part)+')+"out.pkl"\n'
 #
 #
-maxStepMatch=re.search("\d+",contents[lineMaxStep])
-if maxStepMatch:
-    maxStep=maxStepMatch.group()
+# maxStepMatch=re.search("\d+",contents[lineMaxStep])
+# if maxStepMatch:
+#     maxStep=maxStepMatch.group()
+setMaxStep=40000
 counter=0
 for TVal in TemperaturesAll:
     for rs in randSeedAll:
         contents[lineTemperature]="T="+str(TVal)+"\n"
         contents[lineRandSeed]="random.seed("+str(rs)+")\n"
-        contents[-3] = 'outPklFileName="T"+str(T)+"t"+str(t)+"J"+str(J)+"g"+str(g)'+'+"randseed"+str('+str(rs)+')+"step"+str('+str(maxStep)+')+"part"+str(' + str(
+        contents[linePart]="part="+str(part)+"\n"
+        contents[lineMaxStep]="maxEquilbrationStep="+str(setMaxStep)+"\n"
+        contents[-5]='outDir="./part"+str(part)+"/"\n'
+        contents[-4]='Path(outDir).mkdir(parents=True, exist_ok=True)\n'
+        contents[-3] = 'outPklFileName=outDir+"T"+str(T)+"t"+str(t)+"J"+str(J)+"g"+str(g)'+'+"randseed"+str('+str(rs)+')+"step"+str('+str(setMaxStep)+')+"part"+str(' + str(
             part) + ')+"out.pkl"\n'
         outFileName = "computeEigLag" + str(counter) + "part" + str(part)+"randseed"+str(rs) + ".py"
         fileOut = open(outFileName, "w+")
