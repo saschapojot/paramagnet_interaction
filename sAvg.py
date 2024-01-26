@@ -26,7 +26,7 @@ class computationData:#holding computational results to be dumped using pickle
         self.equilibrium=False
 
 
-part=3
+part=5
 pklFileNames=[]
 TValsAll=[]
 tValsAll=[]
@@ -48,13 +48,19 @@ for file in glob.glob(inDir+"*.pkl"):
     if matchJ:
         JValsAll.append(matchJ.group(1))
     #search g values
-    matchg=re.search(r"g(-?\d+(\.\d+)?)p",file)
+    matchg=re.search(r"g(-?\d+(\.\d+)?)rand",file)
     if matchg:
         gValsAll.append(matchg.group(1))
 # print("T vals = "+str(TValsAll))
 # print("t vals = "+str(tValsAll))
 # print("J vals = "+str(JValsAll))
 # print("g vals = "+str(gValsAll))
+
+print("T val length = "+str(len(TValsAll)))
+print("t val length = "+str(len(tValsAll)))
+print("J val length = "+str(len(JValsAll)))
+print("g val length = "+str(len(gValsAll)))
+print("file val length = "+str(len(pklFileNames)))
 
 val0=(len(TValsAll)-len(tValsAll))**2\
     +(len(TValsAll)-len(tValsAll))**2\
@@ -87,8 +93,8 @@ tPltStart=datetime.now()
 sAvgAll=[]
 chiValAll=[]
 specificHeatAll=[]
-lastNum=5000#use the last lastNum configurations
-separation=30#separation of the used configurations
+lastNum=20000#use the last lastNum configurations
+separation=100#separation of the used configurations
 
 for i in range(0,len(pklFileNames)):
     inPklFileName=pklFileNames[i]
