@@ -55,8 +55,8 @@ pklFileNames=[pklFileNames[ind] for ind in T_inds]
 TValsAll=[TValsAll[ind] for ind in T_inds]
 figDir=inDir+"/sEvo/"
 Path(figDir).mkdir(parents=True, exist_ok=True)
-lastNum=20000#use the last lastNum configurations
-separation=100#separation of the used configurations
+# lastNum=20000#use the last lastNum configurations
+# separation=100#separation of the used configurations
 
 tStart=datetime.now()
 for i in range(0,len(pklFileNames)):
@@ -66,7 +66,7 @@ for i in range(0,len(pklFileNames)):
     with open(inPklFileName, "rb") as fptr:
         record = pickle.load(fptr)
 
-    sAllMean=np.mean(record.sAll,axis=1)
+    sAllMean=np.mean(record.sAll,axis=1)#mean of s for each configuration
     #plt
     fig, ax = plt.subplots()
     ax.plot(sAllMean, color="black")
