@@ -23,7 +23,7 @@ class computationData:#holding computational results to be dumped using pickle
 
 
 
-part=5
+part=2
 pklFileNames=[]
 TValsAll=[]
 inDir="./part"+str(part)+"/"
@@ -52,7 +52,7 @@ TValsAll=str2float(TValsAll)
 T_inds=np.argsort(TValsAll)
 
 pklFileNames=[pklFileNames[ind] for ind in T_inds]
-
+TValsAll=[TValsAll[ind] for ind in T_inds]
 figDir=inDir+"/sEvo/"
 Path(figDir).mkdir(parents=True, exist_ok=True)
 lastNum=20000#use the last lastNum configurations
