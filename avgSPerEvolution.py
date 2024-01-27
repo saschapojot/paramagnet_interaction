@@ -76,7 +76,7 @@ for i in range(0,len(pklFileNames)):
     plt.savefig(figDir+"rec"+str(i)+"Temp"+str(TTmp)+".png")
     plt.close()
     t1loopEnd = datetime.now()
-    print("loading time: ", t1loopEnd-t1loopStart)
+    print("loop time: ", t1loopEnd-t1loopStart)
 
 
 
