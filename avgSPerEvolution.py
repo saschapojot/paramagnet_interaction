@@ -58,20 +58,27 @@ Path(figDir).mkdir(parents=True, exist_ok=True)
 lastNum=20000#use the last lastNum configurations
 separation=100#separation of the used configurations
 
-
+tStart=datetime.now()
 for i in range(0,len(pklFileNames)):
+    TTmp=TValsAll[i]
     inPklFileName = pklFileNames[i]
-    tLoadStart = datetime.now()
+    t1loopStart= datetime.now()
     with open(inPklFileName, "rb") as fptr:
         record = pickle.load(fptr)
-    tLoadEnd = datetime.now()
-    print("loading time: ", tLoadEnd - tLoadStart)
+
     sAllMean=np.mean(record.sAll,axis=1)
     #plt
-
-    fig,ax=plt.subplots()
-    ax.plot(range(0,len(sAllMean)),sAllMean,color="black")
-    ax.set_ylabel("$\\frac{1}{L}\sum_{i=0}^{L-1}s_{i}$")
+    fig, ax = plt.subplots()
+    ax.plot(sAllMean, color="black")
+    ax.set_ylabel("avg of s in supercell")
     ax.set_xlabel("MC step")
-    plt.savefig(figDir+"rec"+str(i)+"temp"+str(TValsAll[i]))
+    ax.set_title("$T=$"+str(TTmp))
+    plt.savefig(figDir+"rec"+str(i)+"Temp"+str(TTmp)+".png")
     plt.close()
+    t1loopEnd = datetime.now()
+    print("loading time: ", t1loopEnd-t1loopStart)
+
+
+
+tEnd=datetime.now()
+print("total time: ",tEnd-tStart)
