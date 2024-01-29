@@ -83,7 +83,7 @@ for TVal in TemperaturesAll:
     bashContents.append("#SBATCH -N 1\n")
     bashContents.append("#SBATCH -t 0-40:00\n")
     bashContents.append("#SBATCH -p CLUSTER\n")
-    bashContents.append("#SBATCH --mem=40GB\n")
+    bashContents.append("#SBATCH --mem=140GB\n")
     bashContents.append("#SBATCH -o outlag" + str(counter) + ".o\n")
     bashContents.append("#SBATCH -e outlag" + str(counter) + ".e\n")
     bashContents.append("cd /home/cywanag/liuxi/Documents/pyCode/paramagnet_interaction\n")
