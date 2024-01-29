@@ -4,6 +4,11 @@ from multiprocessing import Pool
 from datetime import datetime
 import pickle
 import matplotlib.pyplot as plt
+import glob
+import re
+from pathlib import Path
+#this script computes unfolded energy bands
+
 class mapperUnfolding():
     def __init__(self, retEigPrimSortedAll,retEigSupSortedAll):
         """
@@ -147,22 +152,11 @@ class mapperUnfolding():
 
 
 
-blkSize=100
-blkNum=50
-
-
-
-
-
-
-
-
-
 class computationData:#holding computational results to be dumped using pickle
     def __init__(self):
         # self.T=TEst
-        self.blkSize=blkSize
-        self.blkNum=blkNum
+        self.blkSize=1
+        self.blkNum=1
         self.data=[]
         self.sAll=[]
         self.EAvgAll=[]
@@ -170,25 +164,73 @@ class computationData:#holding computational results to be dumped using pickle
         self.TEq=1000
         self.equilibrium=False
 
-tLoadStart=datetime.now()
+
+part=5
+pklFileNames=[]
+TValsAll=[]
+tValsAll=[]
+JValsAll=[]
+gValsAll=[]
+inDir="./part"+str(part)+"/"
+for file in glob.glob(inDir+"*.pkl"):
+    pklFileNames.append(file)
+    #search T value
+    matchT=re.search(r"T(-?\d+(\.\d+)?)t",file)
+    if matchT:
+        TValsAll.append(matchT.group(1))
+    #search t values
+    matcht=re.search(r"t(-?\d+(\.\d+)?)J",file)
+    if matcht:
+        tValsAll.append(matcht.group(1))
+    #search J values
+    matchJ=re.search(r"J(-?\d+(\.\d+)?)g",file)
+    if matchJ:
+        JValsAll.append(matchJ.group(1))
+    #search g values
+    matchg=re.search(r"g(-?\d+(\.\d+)?)rand",file)
+    if matchg:
+        gValsAll.append(matchg.group(1))
+
+
+
+val0=(len(TValsAll)-len(tValsAll))**2\
+    +(len(TValsAll)-len(tValsAll))**2\
+    +(len(TValsAll)-len(JValsAll))**2\
+    +(len(TValsAll)-len(gValsAll))**2\
+    +(len(TValsAll)-len(pklFileNames))**2
+
+
+if val0!=0:
+    raise ValueError("unequal length.")
+
+def str2float(valList):
+    ret=[float(strTmp) for strTmp in valList]
+    return ret
+
+
+TValsAll=str2float(TValsAll)
+tValsAll=str2float(tValsAll)
+JValsAll=str2float(JValsAll)
+gValsAll=str2float(gValsAll)
+#sort temperatures
+T_inds=np.argsort(TValsAll)
+TValsAll=[TValsAll[ind] for ind in T_inds]
+tValsAll=[tValsAll[ind] for ind in T_inds]
+JValsAll=[JValsAll[ind] for ind in T_inds]
+gValsAll=[gValsAll[ind] for ind in T_inds]
+pklFileNames=[pklFileNames[ind] for ind in T_inds]
+
+bandsDir=inDir+"/energyBands/"
+Path(bandsDir).mkdir(parents=True, exist_ok=True)
+
 L=10
 M=20
-t=0.4
-J=-2.5
-g=0.05
-T=100
-inPklFile="T"+str(T)+"t"+str(t)+"J"+str(J)+"g"+str(g)+"out.pkl"
-
-with open(inPklFile,"rb") as fptr:
-    record=pickle.load(fptr)
-tLoadEnd=datetime.now()
-print("loading time: ",tLoadEnd-tLoadStart)
-
-
 NPrim=L*M
-
+t=0.4
+lastNum=20000#use the last lastNum configurations
+separation=100#separation of the used configurations
 kPrimAll=[2*np.pi*n/NPrim for n in range(0,NPrim)]
-
+kPrimIndsAll=[2*n/NPrim for n in range(0,NPrim)]
 retEigPrimSortedAll=[]
 for n in range(0,NPrim):
     kn=kPrimAll[n]
@@ -197,118 +239,40 @@ for n in range(0,NPrim):
     oneRow=[n,vals,vecs]
     retEigPrimSortedAll.append(oneRow)
 
-dataLast=record.data[-5000::30]
-# chemPotLast=record.chemPotAll[-5000::50]
-EMatsAll=[]
-cMatsAll=[]
+tMapStart=datetime.now()
+for i in range(0,len(pklFileNames)):
+    with open(pklFileNames[i] ,"rb") as fptr:
+        record = pickle.load(fptr)
+    tLoadEnd = datetime.now()
+    dataLast = record.data[-lastNum::separation]
+    EMatsAll = []
+    cMatsAll = []
+    for oneRet in dataLast:
+        mapper = mapperUnfolding(retEigPrimSortedAll, oneRet)
+        mapper.mapping()
+        EMat, cMat = mapper.allA2EMatcMat()
+        EMatsAll.append(EMat)
+        cMatsAll.append(cMat)
+    Num = len(dataLast)
+    EMatAvg = np.zeros(EMatsAll[0].shape)
+    cMatAvg = np.zeros(cMatsAll[0].shape)
+    for EMat in EMatsAll:
+        EMatAvg += EMat
+    EMatAvg /= Num
+    for cMat in cMatsAll:
+        cMatAvg += cMat
+    cMatAvg /= Num
+    plt.figure()
+    for j in range(0, len(EMatAvg)):
+        plt.scatter(kPrimIndsAll, EMatAvg[j, :], s=cMatAvg[j, :], color="red")
+    plt.xlabel("$k/\pi$")
+    plt.ylabel("$E$")
+    # muAvg=np.mean(chemPotLast)
+    # # print(chemPotLast)
+    # plt.hlines(y=muAvg, xmin=kPrimIndsAll[0], xmax=kPrimIndsAll[-1], colors='blue', linestyles='-', lw=2, label='average chemical potential')
+    T=TValsAll[i]
+    J=JValsAll[i]
+    g=gValsAll[i]
 
-tAvgStart=datetime.now()
-for oneRet in dataLast:
-    mapper=mapperUnfolding(retEigPrimSortedAll,oneRet)
-    mapper.mapping()
-
-    EMat, cMat = mapper.allA2EMatcMat()
-    EMatsAll.append(EMat)
-
-    cMatsAll.append(cMat)
-
-Num=len(dataLast)
-EMatAvg=np.zeros(EMatsAll[0].shape)
-# print(len(EMatAvg))
-cMatAvg=np.zeros(cMatsAll[0].shape)
-for EMat in EMatsAll:
-    EMatAvg+=EMat
-EMatAvg/=Num
-
-for cMat in cMatsAll:
-    cMatAvg+=cMat
-cMatAvg/=Num
-tAvgEnd=datetime.now()
-print("avg time: ",tAvgEnd-tAvgStart)
-kPrimIndsAll=[2*n/NPrim for n in range(0,NPrim)]
-plt.figure()
-for j in range(0,len(EMatAvg)):
-    plt.scatter(kPrimIndsAll,EMatAvg[j,:],s=cMatAvg[j,:],color="red")
-plt.xlabel("$k/\pi$")
-plt.ylabel("$E$")
-# muAvg=np.mean(chemPotLast)
-# # print(chemPotLast)
-# plt.hlines(y=muAvg, xmin=kPrimIndsAll[0], xmax=kPrimIndsAll[-1], colors='blue', linestyles='-', lw=2, label='average chemical potential')
-plt.title("$T=$"+str(T)+", $t=$"+str(t)+", $J=$"+str(J)+", $g=$"+str(g))
-plt.savefig("T"+str(T)+"t"+str(t)+"J"+str(J)+"g"+str(g)+".png")
-
-# mapper=mapperUnfolding(retEigPrimSortedAll,record.data[45])
-# mapper.mapping()
-# retAllAMat=mapper.retAllAMat
-# EMat, cMat=mapper.allA2EMatcMat()
-#
-#
-# kPrimIndsAll=[2*n/NPrim for n in range(0,NPrim)]
-# plt.figure()
-# for j in range(0,len(EMat)):
-#     plt.scatter(kPrimIndsAll,EMat[j,:],s=cMat[j,:],color="red")
-#
-# plt.savefig("tmp.png")
-
-
-# m=2
-# a=3
-# counter=0
-# for item in retAllAMat:
-#     m_,a_,A_=item
-#     if m_!=m or a_!=a:
-#         continue
-#     else:
-#         for oneRow in A_:
-#             _,_,_,E,_,_=oneRow
-#             print(E)
-#             counter+=1
-# print(counter)
-# counter=0
-# setm=2
-# setb=8
-# projs0=[]
-# projs1=[]
-# tmp=0
-# print(len(retAllAMat))
-# for item in retAllAMat:
-#     m,a,A=item
-#     if m!=setm:
-#         continue
-#     else:
-#         for oneRow in A:
-#             _,_,j,E,c,b=oneRow
-#             if b!=setb:
-#                 continue
-#             else:
-#                 if j==0:
-#                     projs0.append(c)
-#                 else:
-#                     projs1.append(c)
-#
-# projs0=np.array(projs0)
-# projs1=np.array(projs1)
-#
-# tmp0=np.sum(projs0**2)
-# tmp1=np.sum(projs1**2)
-#
-# print(tmp0)
-# print(tmp1)
-
-
-# print(sorted(inds,key=lambda item: item[0]))
-
-
-
-#
-# plt.figure()
-#
-# for item in retAllAMat:
-#     m,a,A=item
-#     for row in A:
-#         kPrimTmp=2*(m+a*M)/NPrim
-#         _,_,_,E,c=row
-#         plt.scatter(2*(m+a*M)/NPrim,E,s=c**2*10)
-#
-# plt.savefig("tmp.png")
-# plt.close()
+    plt.title("$T=$" + str(T) + ", $t=$" + str(t) + ", $J=$" + str(J) + ", $g=$" + str(g))
+    plt.savefig(bandsDir+"rec"+str(i)+"T" + str(T) + "t" + str(t) + "J" + str(J) + "g" + str(g) + ".png")

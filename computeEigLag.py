@@ -1,5 +1,5 @@
 import pickle
-
+from pathlib import Path
 from scipy.sparse import kron
 from scipy.sparse import lil_matrix
 import numpy as np
@@ -17,7 +17,7 @@ import statsmodels.api as sm
 
 
 random.seed(100)
-
+part=0
 L=10
 M=20
 
@@ -457,6 +457,8 @@ tMCEnd=datetime.now()
 print("MC time: ", tMCEnd-tMCStart)
 print("flip num: "+str(flipNum))
 print("no flip num: "+str(notFlipNum))
+#########to make dir (to be replaced)
+#########to make dir (to be replaced)
 outPklFileName="T"+str(T)+"t"+str(t)+"J"+str(J)+"g"+str(g)+"step"+str(maxEquilbrationStep)+"out.pkl"
 with open(outPklFileName,"wb") as fptr:
     pickle.dump(record,fptr, pickle.HIGHEST_PROTOCOL)
