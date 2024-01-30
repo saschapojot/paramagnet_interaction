@@ -1,5 +1,5 @@
 import pickle
-
+from pathlib import Path
 from scipy.sparse import kron
 from scipy.sparse import lil_matrix
 import numpy as np
@@ -16,8 +16,8 @@ import statsmodels.api as sm
 #for 1 set of [L,M,J,t,g] parameters
 
 
-random.seed(100)
-
+# random.seed(100)
+part=0
 L=10
 M=20
 
@@ -26,7 +26,7 @@ Ne=M
 
 t=0.4
 J=-2.5
-g=0.05
+g=0
 KSupValsAll=[2*np.pi*j/(L*M) for j in range(0,M)]
 
 T=0.01
@@ -306,16 +306,16 @@ maxEquilbrationStep=50000
 
 toEquilibriumCounter=0
 tau=0
-tEqStart=datetime.now()
+# tEqStart=datetime.now()
 flipNum=0
 notFlipNum=0
 print("T="+str(T))
 
 #to reach equilibrium of MCMC
 while active:
-    print("step "+str(tau))
+    # print("step "+str(tau))
 
-    tOneMCStepStart=datetime.now()
+    # tOneMCStepStart=datetime.now()
     #flip s
     sNext = deepcopy(sCurr)
     flipIndVal=random.randint(0,L-1)
@@ -332,28 +332,28 @@ while active:
     # tSolveEqnEnd=datetime.now()
     # print("solve mu :",tSolveEqnEnd-tSolveEqnStart)
     # tFlipStart=datetime.now()
-    print("Delta E="+str(DeltaE))
+    # print("Delta E="+str(DeltaE))
     if DeltaE <= 0:
         sCurr = deepcopy(sNext)
         retAll = deepcopy(retAllNext)
         EAvgCurr=EAvgNext
         muCurr=muNext
-        print("flipped")
+        # print("flipped")
         flipNum+=1
     else:
         r=random.random()
 
-        print("r="+str(r))
-        print("exp(-beta*Delta E)=" + str(np.exp(-beta * DeltaE)))
+        # print("r="+str(r))
+        # print("exp(-beta*Delta E)=" + str(np.exp(-beta * DeltaE)))
         if r < np.exp(-beta * DeltaE):
             sCurr = deepcopy(sNext)
             retAll = deepcopy(retAllNext)
             EAvgCurr = EAvgNext
             muCurr=muNext
-            print("flipped")
+            # print("flipped")
             flipNum+=1
         else:
-            print("not flipped")
+            # print("not flipped")
             notFlipNum+=1
     # tFlipEnd=datetime.now()
     # print("flip time: ",tFlipEnd-tFlipStart)
@@ -366,14 +366,14 @@ while active:
     # EMin=np.min(EVecTmp)
     # print("Emin="+str(EMin))
     # print("mu="+str(muCurr))
-    print("sCurr="+str(sCurr))
+    # print("sCurr="+str(sCurr))
     # print("EMax="+str(EMax))
-    tOneMCStepEnd=datetime.now()
-    print("one step MC :",tOneMCStepEnd-tOneMCStepStart)
+    # tOneMCStepEnd=datetime.now()
+    # print("one step MC :",tOneMCStepEnd-tOneMCStepStart)
+    #
+    # print("=====================================")
 
-    print("=====================================")
-
-    if tau%500==0:
+    if tau%5000==0:
         print("flip "+str(tau))
     toEquilibriumCounter+=1
     tau += 1
@@ -385,8 +385,8 @@ while active:
     #         record.equilibrium=True
     #         active=False
 
-tEqEnd=datetime.now()
-print("equilibrium time: ",tEqEnd-tEqStart)
+# tEqEnd=datetime.now()
+# print("MC time: ",tEqEnd-tEqStart)
 loop=tau-1
 record.loop=loop
 
@@ -457,6 +457,8 @@ tMCEnd=datetime.now()
 print("MC time: ", tMCEnd-tMCStart)
 print("flip num: "+str(flipNum))
 print("no flip num: "+str(notFlipNum))
+#########to make dir (to be replaced)
+#########to make dir (to be replaced)
 outPklFileName="T"+str(T)+"t"+str(t)+"J"+str(J)+"g"+str(g)+"step"+str(maxEquilbrationStep)+"out.pkl"
 with open(outPklFileName,"wb") as fptr:
     pickle.dump(record,fptr, pickle.HIGHEST_PROTOCOL)
