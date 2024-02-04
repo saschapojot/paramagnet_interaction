@@ -1,7 +1,7 @@
 import numpy as np
 import re
-from  scipy.stats import ks_2samp
 
+import glob
 import pickle
 
 
@@ -16,6 +16,28 @@ class computationData:#holding computational results to be dumped using pickle
         self.chemPotAll = []
         self.loop=1000
         self.equilibrium=False
+def autc(x,k):
+    """
+
+    :param x: array
+    :param k: lag length
+    :return: autocorrelation of x with lag k
+    """
+    x=np.array(x)
+    if len(x)==0:
+        raise ValueError("x is null")
+    if len(x)==1:#only 1 element
+        return 1
+    meanx = np.mean(x)
+    diffxmean=x-meanx #all values are the same
+    if np.linalg.norm(diffxmean,ord=2)<1e-13:
+        return 1
+    numerator = np.sum((x[k:] - meanx) * (x[:-k] - meanx))
+    denominator = np.sum(diffxmean * diffxmean)
+
+    return numerator/denominator
+
+
 
 
 part=7
