@@ -15,6 +15,7 @@ randSeedAll=[]
 fileIn=open(lagFileName+suffix,"r")
 
 contents=fileIn.readlines()
+
 lineTemperature=0#the line corresponding to T=xxxxx (temperature)
 lineRandSeed=0# random seed
 lineMaxStep=0# loop numbers in first mc
