@@ -7,8 +7,8 @@ import re
 lagFileName="computeEigLag"
 suffix=".py"
 
-part=6
-TemperaturesAll=[0.1+0.05*n  for n in range(0,51)]
+part=7
+TemperaturesAll=[0.1+0.05*n  for n in range(0,61)]
 randSeedAll=[]
 
 
@@ -46,7 +46,7 @@ for l in range(0,len(contents)):
 # if maxStepMatch:
 #     maxStep=maxStepMatch.group()
 L=10
-setMaxStep=50000*L
+setMaxStep=20000*L
 counter=0
 if len(randSeedAll)==0:
     outPklFileName='outPklFileName=outDir+"T"+str(T)+"t"+str(t)+"J"+str(J)+"g"+str(g)'+'+"randseed"+"step"+str('+str(setMaxStep)+')+"part"+str(' + str(
