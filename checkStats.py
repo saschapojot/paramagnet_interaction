@@ -5,6 +5,7 @@ from datetime import datetime
 import glob
 import pickle
 from pathlib import Path
+from scipy.stats import ks_2samp
 #check stats of computed MC results
 #we check the following:
 #1. cumulative average
@@ -23,6 +24,8 @@ class computationData:#holding computational results to be dumped using pickle
         self.chemPotAll = []
         self.loop=1000
         self.equilibrium=False
+
+
 def autc(x,k):
     """
 
@@ -43,8 +46,6 @@ def autc(x,k):
     denominator = np.sum(diffxmean * diffxmean)
 
     return numerator/denominator
-
-
 
 
 part=3
@@ -79,12 +80,6 @@ val0=(len(TValsAll)-len(tValsAll))**2\
     +(len(TValsAll)-len(JValsAll))**2\
     +(len(TValsAll)-len(gValsAll))**2\
     +(len(TValsAll)-len(pklFileNames))**2
-# print("len(TValsAll)="+str(len(TValsAll)))
-# print("len(tValsAll)="+str(len(tValsAll)))
-# print("len(JValsAll)="+str(len(JValsAll)))
-# print("len(gValsAll)="+str(len(gValsAll)))
-# print("len(pklFileNames)="+str(len(pklFileNames)))
-
 
 if val0!=0:
     raise ValueError("unequal length.")
@@ -112,12 +107,14 @@ TTmp=TValsAll[ldInd]
 tTmp=tValsAll[ldInd]
 JTmp=JValsAll[ldInd]
 gTmp=gValsAll[ldInd]
+
 tLoadStart = datetime.now()
 with open(inPklFileName, "rb") as fptr:
     record=pickle.load(fptr)
 tLoadEnd = datetime.now()
 print("loading time: ", tLoadEnd - tLoadStart)
 R=int(len(record.sAll)/3)
+#discard the first R samples
 def makeROdd(R):
     #if R is odd
     if R%2==1:
@@ -130,77 +127,136 @@ def makeREven(R):
         return R+1
     else:
         return R
+
 lenTot=len(record.sAll)
 #if total length is odd
 if lenTot%2==1:
     R=makeROdd(R)
 else:
     R=makeREven(R)
-###################################################
-#1. (1)cumulative average of s
+
+
+#####################################################
+# effective length
 subSampleSpin=record.sAll[R:]
-
-lenSubSample=len(subSampleSpin)
-
 sMeanAbsAll=np.abs(np.mean(subSampleSpin,axis=1))
+rho=autc(sMeanAbsAll,1)
+A=(1+rho)/(1-rho)
+A*=2# we increase the value of A for safety
+A=int(A)
 
-cs=np.cumsum(sMeanAbsAll)
+#  Kolmogorov-SmirNov test
+
+# KS test for |<s>|
+selectedsAll=sMeanAbsAll[0::A]
+if len(selectedsAll)%2==1:
+    selectedsAll=selectedsAll[1:]
+
+lenSelected=len(selectedsAll)
+
+sPart1=selectedsAll[:int(lenSelected/2)]
+sPart2=selectedsAll[int(lenSelected/2):]
+
+sD,spval=ks_2samp(sPart1,sPart2)
+sD=round(sD,3)
+spval=round(spval,3)
+#cumulative average for |<s>|
+cs=np.cumsum(selectedsAll)
 csDenom=[i for i in range(1,len(cs)+1)]
 cumusAvg=cs/csDenom
-
 outsDir=inDir+"diagnostics/sCumAvg/"
 Path(outsDir).mkdir(parents=True, exist_ok=True)
 
-plt.figure()
-plt.plot(range(R,R+len(cumusAvg)),cumusAvg,color="black")
-plt.title("$T=$"+str(TTmp)+", $t=$"+str(tTmp)+", $J=$"+str(JTmp)+", $g=$"+str(gTmp))
-plt.xlabel("MC step")
-plt.ylabel("cumulative average $<s>$")
+fig,ax=plt.subplots()
+ax.plot(range(R,R+len(cumusAvg)),cumusAvg,color="black")
+xsTicks=[R,R+len(cumusAvg)*1/4,R+len(cumusAvg)*2/4,R+len(cumusAvg)*3/4,R+len(cumusAvg)*4/4]
+plt.axvline(x = R, color = 'r', ls=":")
+# print(R)
+ax.set_title("$T=$"+str(TTmp)+", $t=$"+str(tTmp)+", $J=$"+str(JTmp)+", $g=$"+str(gTmp))
+ax.set_xlabel("MC step")
+plt.xticks(xsTicks)
+ax.set_ylabel("cumulative average $<s>$")
+props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+txtsStr="$D=$"+str(sD)+", p val = "+str(spval)
+ax.text(0.5, 0.95, txtsStr, transform=ax.transAxes, fontsize=14,
+        verticalalignment='top', bbox=props)
 outsFilePrefix="sCumAvg"+inPklFileName[8:-4]
 plt.savefig(outsDir+outsFilePrefix+".png")
-#1. (2) cumulative average of E
+plt.close()
+# KS test for E
 subSampleEAvg=record.EAvgAll[R:]
-cE=np.cumsum(subSampleEAvg)
+selectedEAvgAll=subSampleEAvg[0::A]
+if len(selectedEAvgAll)%2==1:
+    selectedEAvgAll=selectedEAvgAll[1:]
+
+lenEAvgSelected=len(selectedEAvgAll)
+
+EAvgPart1=selectedEAvgAll[:int(lenEAvgSelected/2)]
+EAvgPart2=selectedEAvgAll[int(lenEAvgSelected/2):]
+ED,Epval=ks_2samp(EAvgPart1,EAvgPart2)
+ED=round(ED,3)
+Epval=round(Epval,3)
+#cumulative average for EAvg
+cE=np.cumsum(selectedEAvgAll)
 cEDenom=np.array([i for i in range(1,len(cE)+1)])
 cumuEAvg=cE/cEDenom
+xEAvgTicks=[R,R+len(cumuEAvg)*1/4,R+len(cumuEAvg)*2/4\
+    ,R+len(cumuEAvg)*3/4,R+len(cumuEAvg)*4/4]
+
 outEDir=inDir+"diagnostics/ECumAvg/"
 Path(outEDir).mkdir(parents=True, exist_ok=True)
-
-plt.figure()
-plt.plot(range(R,R+len(cumuEAvg)),cumuEAvg,color="red")
+txtEAvgStr="$D=$"+str(ED)+", p val = "+str(Epval)
+# print(txtEAvgStr)
+fig,ax=plt.subplots()
+ax.plot(range(R,R+len(cumuEAvg)),cumuEAvg,color="red")
 plt.title("$T=$"+str(TTmp)+", $t=$"+str(tTmp)+", $J=$"+str(JTmp)+", $g=$"+str(gTmp))
 plt.xlabel("MC step")
 plt.ylabel("cumulative average $E$")
+plt.xticks(xEAvgTicks)
+plt.axvline(x = R, color = 'blue', ls=":")
+props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+ax.text(0.5, 0.95, txtEAvgStr, transform=ax.transAxes, fontsize=14,
+        verticalalignment='top', bbox=props)
 outEFilePrefix="ECumAvg"+inPklFileName[8:-4]
 plt.savefig(outEDir+outEFilePrefix+".png")
+plt.close()
 
-#1. (2) cumulative average of mu
+######
+# KS test for mu
 
 subSampleMu=record.chemPotAll[R:]
-cMu=np.cumsum(subSampleMu)
-cMuDenom=np.array([i for i in range(1,len(cE)+1)])
-cumuMuAvg=cMu/cMuDenom
+selectedMuAll=subSampleMu[0::A]
+
+if len(selectedMuAll)%2==1:
+    selectedMuAll=selectedMuAll[1:]
+lenMuSelected=len(selectedMuAll)
+
+muPart1=selectedMuAll[:int(lenMuSelected/2)]
+muPart2=selectedMuAll[int(lenMuSelected/2):]
+
+muD,mupval=ks_2samp(muPart1,muPart2)
+muD=round(muD,3)
+mupval=round(mupval,3)
+
+#cumulative average for mu
+cmu=np.cumsum(selectedMuAll)
+cmuDenom=np.array([i for i  in range(1,len(cmu)+1)])
+cumumMu=cmu/cmuDenom
+xMuTicks=[R,R+len(cumumMu)*1/4,R+len(cumumMu)*2/4\
+    ,R+len(cumumMu)*3/4,R+len(cumumMu)*4/4]
 outMuDir=inDir+"diagnostics/muCumAvg/"
 Path(outMuDir).mkdir(parents=True, exist_ok=True)
-plt.figure()
-plt.plot(range(R,R+len(cumuMuAvg)),cumuMuAvg,color="blue")
+
+fig,ax=plt.subplots()
+ax.plot(range(R,R+len(cumuEAvg)),cumumMu,color="black")
 plt.title("$T=$"+str(TTmp)+", $t=$"+str(tTmp)+", $J=$"+str(JTmp)+", $g=$"+str(gTmp))
 plt.xlabel("MC step")
 plt.ylabel("cumulative average $\mu$")
-outmuFilePrefix="muCumAvg"+inPklFileName[8:-4]
-plt.savefig(outMuDir+outmuFilePrefix+".png")
-###############################################################
-
-################################################################
-#2. effective length
-
-#using |<s>|
-# sA=0
-# for tau in range(1,len(sMeanAbsAll)):
-#     sA+=autc(sMeanAbsAll,tau)
-# sA*=2
-# sA+=1
-# print(sA)
-rho=autc(sMeanAbsAll,1)
-
-print((1+rho)/(1-rho))
+plt.xticks(xMuTicks)
+plt.axvline(x = R, color = 'green', ls=":")
+props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+ax.text(0.5, 0.95, txtEAvgStr, transform=ax.transAxes, fontsize=14,
+        verticalalignment='top', bbox=props)
+outMuFilePrefix="MuCumAvg"+inPklFileName[8:-4]
+plt.savefig(outMuDir+outMuFilePrefix+".png")
+plt.close()
