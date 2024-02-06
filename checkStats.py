@@ -101,7 +101,7 @@ gValsAll=[gValsAll[ind] for ind in T_inds]
 pklFileNames=[pklFileNames[ind] for ind in T_inds]
 
 
-ldInd=-3
+ldInd=-5
 inPklFileName=pklFileNames[ldInd]
 TTmp=TValsAll[ldInd]
 tTmp=tValsAll[ldInd]
@@ -260,3 +260,8 @@ ax.text(0.5, 0.95, txtEAvgStr, transform=ax.transAxes, fontsize=14,
 outMuFilePrefix="MuCumAvg"+inPklFileName[8:-4]
 plt.savefig(outMuDir+outMuFilePrefix+".png")
 plt.close()
+
+
+rhoValsAll=[autc(sMeanAbsAll,i) for i in range(1,len(sMeanAbsAll))]
+rst=1+2*np.sum(rhoValsAll)
+print(rst)
